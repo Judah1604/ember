@@ -33,7 +33,7 @@ export async function fetchFromGithub(username, githubKey) {
 				},
 			}),
 		}),
-		data = await response.json()
+		data = await response.json();
 
 	return data;
 }

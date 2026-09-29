@@ -1,6 +1,10 @@
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
-  username TEXT NOT NULL UNIQUE
+  username TEXT NOT NULL UNIQUE,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+
 );
 
 CREATE TABLE platform_accounts (
@@ -16,4 +20,10 @@ CREATE TABLE activity_log (
   platform TEXT NOT NULL,
   date DATE NOT NULL,
   count INTEGER NOT NULL
+);
+CREATE TABLE sessions (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  session_token TEXT NOT NULL UNIQUE,
+  expiry TIMESTAMP NOT NULL
 );
