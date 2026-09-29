@@ -1,0 +1,37 @@
+.authform {
+	width: 750px;
+	background-color: var(--background);
+	padding: 30px;
+	border-radius: 20px;
+	border: 2px solid color-mix(in srgb, #f66143 20%, transparent);
+
+	&.sign-up {
+		form {
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+		}
+	}
+
+	.form-col {
+		display: flex;
+		gap: 15px;
+	}
+	.form-group {
+		width: 100%;
+
+		label {
+			margin-bottom: 5px;
+		}
+	}
+
+	.btns {
+		span {
+			color: #646464;
+
+			a {
+				color: white;
+			}
+		}
+	}
+}
