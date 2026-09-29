@@ -9,3 +9,11 @@ CREATE TABLE platform_accounts (
   platform TEXT NOT NULL,
   platform_username TEXT NOT NULL
 );
+
+CREATE TABLE activity_log (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  platform TEXT NOT NULL,
+  date DATE NOT NULL,
+  count INTEGER NOT NULL
+);

@@ -1,12 +1,14 @@
-import { supabase } from "@/lib/supabase";
+import SyncButton from "@/components/SyncButton";
+import { fetchFromGithub } from "@/scripts/fetchFromGithub";
 
 export default async function Home() {
-    const { data, error } = await supabase
-		.from("users")
-		.select('*')
+	const response = await fetchFromGithub(
+			"judah1604",
+			process.env.GITHUB_TOKEN,
+		),
+		weeks =
+			response.data.user.contributionsCollection.contributionCalendar
+				.weeks;
 
-	console.log(data);
-	console.log(error);
-
-	return <div>Home</div>;
+	return <SyncButton weeks={weeks} />;
 }
