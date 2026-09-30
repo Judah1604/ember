@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
-import bcrypt from "bcryptjs";
-import { supabase } from "@/lib/supabase";
+
 import "../styles/authform.css";
+import signupAction from "./signupAction";
 
 function page() {
 	const [formData, setFormData] = useState({
@@ -17,21 +17,10 @@ function page() {
 			[e.target.name]: e.target.value,
 		});
 	}
+
 	async function handleSubmit(e) {
-		e.preventDefault()
-
-        const passwordHash = await bcrypt.hash(formData.password, 10);
-        const {data, error} = await supabase.from('users').insert({
-            username: formData.username,
-            email: formData.email,
-            password_hash: passwordHash
-        }).select()
-
-        if (error) {
-            console.log('Error inserting', error)
-        }else {
-            console.log('Inserted', data)
-        }
+		e.preventDefault();
+		await signupAction(formData);
 	}
 
 	return (
