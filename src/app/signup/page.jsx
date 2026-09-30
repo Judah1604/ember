@@ -9,6 +9,7 @@ function page() {
 		email: "",
 		password: "",
 	});
+	const [loading, setLoading] = useState(false);
 
 	function handleChange(e) {
 		setFormData({
@@ -19,7 +20,13 @@ function page() {
 
 	async function handleSubmit(e) {
 		e.preventDefault();
-		await signupAction(formData);
+		setLoading(true);
+
+		try {
+			await signupAction(formData);
+		} finally {
+			setLoading(false);
+		}
 	}
 
 	return (
@@ -73,8 +80,14 @@ function page() {
 						<span>
 							Already have an account? <a href="/login">Log in</a>
 						</span>
-						<button type="submit" className="btn btn-primary">
-							Create account
+						<button
+							type="submit"
+							className="btn btn-primary"
+							disabled={loading}
+						>
+							{loading
+								? "Signing you up..."
+								: "Create account"}
 						</button>
 					</div>
 				</form>

@@ -9,6 +9,7 @@ function page() {
 		password: "",
 	});
 	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
 
 	function handleChange(e) {
 		setFormData({
@@ -19,10 +20,16 @@ function page() {
 
 	async function handleSubmit(e) {
 		e.preventDefault();
-        setError('')
-		const result = await loginAction(formData);
-		if (!result.success) {
-			setError(result.error);
+		setError("");
+		setLoading(true);
+		try {
+			const result = await loginAction(formData);
+
+			if (!result.success) {
+				setError(result.error);
+			}
+		} finally {
+			setLoading(false);
 		}
 	}
 
@@ -76,8 +83,10 @@ function page() {
 						<span>
 							New here? <a href="/signup">Sign up</a>
 						</span>
-						<button type="submit" className="btn btn-primary">
-							Continue to dashboard
+						<button type="submit" className="btn btn-primary" disabled={loading}>
+							{loading
+								? "Logging in..."
+								: "Continue to dashboard"}
 						</button>
 					</div>
 				</form>

@@ -90,7 +90,7 @@ h5 {
 
 	&:hover,
 	&:focus-visible,
-	&:active {
+	&:active, &:disabled {
 		background-color: #f35e40 !important;
 	}
 }
