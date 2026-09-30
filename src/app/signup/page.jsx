@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-
 import "../styles/authform.css";
 import signupAction from "./signupAction";
 

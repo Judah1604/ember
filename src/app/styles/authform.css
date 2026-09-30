@@ -35,3 +35,8 @@
 		}
 	}
 }
+
+.form-valid {
+	color: var(--red);
+	font-size: 0.9em;
+}
