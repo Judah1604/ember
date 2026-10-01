@@ -17,6 +17,10 @@ function page() {
 		getUser();
 	}, []);
 
+	function connectGithub() {
+		window.location.href = "/api/github/authorize";
+	}
+
 	return (
 		<div className="dashboard">
 			<SideBar />
@@ -40,21 +44,31 @@ function page() {
 											src="/platforms/github.png"
 											alt="Github"
 										/>
-										<span>Github:</span> @judah1604
+										<span className="thick">Github:</span>{" "}
+										<span
+											className="trans"
+											onClick={connectGithub}
+										>
+											Connect
+										</span>
 									</div>
 									<div className="item">
 										<img
 											src="/platforms/hackatime.png"
 											alt="Hackatime"
 										/>
-										<span>Hackatime:</span> Not connected
+										<span className="thick">
+											Hackatime:
+										</span>{" "}
+										<span className="trans">Connect</span>
 									</div>
 									<div className="item">
 										<img
 											src="/platforms/leetcode.png"
 											alt="Leetcode"
 										/>
-										<span>Leetcode:</span> Not connected
+										<span className="thick">Leetcode:</span>{" "}
+										<span className="trans">Connect</span>
 									</div>
 								</div>
 							</div>
@@ -173,11 +187,10 @@ function page() {
 									</div>
 									<div className="item">
 										<img src="/icons/star.svg" alt="star" />
-                                        <p>
-
-										<span>Most active project: </span>
-										tracker
-                                        </p>
+										<p>
+											<span>Most active project: </span>
+											tracker
+										</p>
 									</div>
 								</div>
 							</div>
@@ -203,10 +216,16 @@ function page() {
 											alt="Activity"
 										/>
 										<div className="categories">
-                                            <div className="item"><span>61</span>Easy</div>
-                                            <div className="item"><span>19</span>Medium</div>
-                                            <div className="item"><span>2</span>Hard</div>
-                                        </div>
+											<div className="item">
+												<span>61</span>Easy
+											</div>
+											<div className="item">
+												<span>19</span>Medium
+											</div>
+											<div className="item">
+												<span>2</span>Hard
+											</div>
+										</div>
 									</div>
 									<div className="item">
 										<img
