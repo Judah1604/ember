@@ -10,7 +10,6 @@ function page() {
 	useEffect(() => {
 		async function getUser() {
 			const user = await getCurrentUser();
-
 			setUserId(user);
 		}
 
