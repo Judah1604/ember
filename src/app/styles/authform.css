@@ -5,6 +5,11 @@
 	border-radius: 20px;
 	border: 2px solid color-mix(in srgb, #f66143 20%, transparent);
 
+	img {
+		height: 35px;
+        margin-bottom: -5px;
+	}
+
 	&.sign-up {
 		form {
 			display: flex;

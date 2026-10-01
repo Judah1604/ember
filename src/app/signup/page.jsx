@@ -32,6 +32,8 @@ function page() {
 	return (
 		<div className="max-w wrapper">
 			<div className="login authform container-sm sign-up">
+				<img src="/logo.svg" alt="Ember" />
+
 				<div className="header">
 					<h1>Create your account</h1>
 					<p>Connect your accounts once, Ember tracks the rest.</p>
@@ -85,9 +87,7 @@ function page() {
 							className="btn btn-primary"
 							disabled={loading}
 						>
-							{loading
-								? "Signing you up..."
-								: "Create account"}
+							{loading ? "Signing you up..." : "Create account"}
 						</button>
 					</div>
 				</form>

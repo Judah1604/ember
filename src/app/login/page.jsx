@@ -36,6 +36,8 @@ function page() {
 	return (
 		<div className="max-w wrapper">
 			<div className="login authform container-sm">
+				<img src="/logo.svg" alt="Ember" />
+
 				<div className="header">
 					<h1>Welcome back</h1>
 					<p>Your streak's been waiting.</p>
@@ -83,7 +85,11 @@ function page() {
 						<span>
 							New here? <a href="/signup">Sign up</a>
 						</span>
-						<button type="submit" className="btn btn-primary" disabled={loading}>
+						<button
+							type="submit"
+							className="btn btn-primary"
+							disabled={loading}
+						>
 							{loading
 								? "Logging in..."
 								: "Continue to dashboard"}

@@ -1,17 +1,20 @@
 .landing {
 	width: 800px;
 
+	img {
+		margin-bottom: -10px;
+		height: 35px;
+	}
+
 	ol {
-        
 		span {
 			font-weight: 500;
 			margin-right: 7px;
 		}
 	}
 
-    .btns {
-        display: flex;
-        gap: 10px;
-    }
-	
+	.btns {
+		display: flex;
+		gap: 10px;
+	}
 }

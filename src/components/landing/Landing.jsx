@@ -5,6 +5,7 @@ function Landing() {
 		<div className="max-w wrapper">
 			<div className="landing container">
 				<div className="header">
+                    <img src="/logo.svg" alt="Ember" />
 					<h1>Your streak doesn't lie.</h1>
 					<p>
 						Ember pulls your GitHub, LeetCode, and Hackatime
