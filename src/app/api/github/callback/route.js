@@ -36,18 +36,43 @@ export async function GET(request) {
 
 	const userId = await getCurrentUser();
 
-	const { data, error } = await supabase
+	const { data: platformExists, error } = await supabase
 		.from("platform_accounts")
-		.insert({
-			user_id: userId,
-			platform: "github",
-			platform_username: githubUser.login,
-			access_token: accessToken,
-		})
-		.select();
+		.select("*")
+		.eq("user_id", userId)
+		.eq("platform", "github");
 
-	if (error) {
-		console.error(error);
+        if (error) {
+			console.error(error);
+		}
+
+	if (platformExists.length === 0) {
+		const { data, error } = await supabase
+			.from("platform_accounts")
+			.insert({
+				user_id: userId,
+				platform: "github",
+				platform_username: githubUser.login,
+				access_token: accessToken,
+			})
+			.select();
+
+		if (error) {
+			console.error(error);
+		}
+	} else {
+		const { data, error } = await supabase
+			.from("platform_accounts")
+			.update({
+				platform_username: githubUser.login,
+				access_token: accessToken,
+			})
+			.eq("user_id", userId)
+			.select();
+
+		if (error) {
+			console.error(error);
+		}
 	}
 
 	return NextResponse.redirect(new URL("/dashboard", request.url));

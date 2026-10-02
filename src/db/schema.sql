@@ -17,9 +17,10 @@ CREATE TABLE platform_accounts (
 CREATE TABLE activity_log (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
+  action TEXT NOT NULL,
+  subject TEXT NOT NULL,
   platform TEXT NOT NULL,
-  date DATE NOT NULL,
-  count INTEGER NOT NULL
+  date DATE NOT NULL
 );
 CREATE TABLE sessions (
   id SERIAL PRIMARY KEY,

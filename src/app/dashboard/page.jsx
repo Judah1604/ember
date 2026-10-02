@@ -1,11 +1,52 @@
 "use client";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
 import React, { useEffect, useState } from "react";
-import "./dashboard.css";
 import SideBar from "./SideBar";
+import { supabase } from "@/lib/supabase";
+import "./dashboard.css";
 
 function page() {
 	const [userId, setUserId] = useState();
+	const [activity, setActivity] = useState([]);
+	const [githubUsername, setGithubUsername] = useState("");
+
+    function timeAgo(date) {
+		const seconds = Math.floor(
+			(Date.now() - new Date(date).getTime()) / 1000,
+		);
+
+		if (seconds < 60) {
+			return `${seconds}s ago`;
+		}
+
+		const minutes = Math.floor(seconds / 60);
+
+		if (minutes < 60) {
+			return `${minutes}m ago`;
+		}
+
+		const hours = Math.floor(minutes / 60);
+
+		if (hours < 24) {
+			return `${hours}h ago`;
+		}
+
+		const days = Math.floor(hours / 24);
+
+		if (days < 30) {
+			return `${days}d ago`;
+		}
+
+		const months = Math.floor(days / 30);
+
+		if (months < 12) {
+			return `${months}mo ago`;
+		}
+
+		const years = Math.floor(days / 365);
+
+		return `${years}y ago`;
+	}
 
 	useEffect(() => {
 		async function getUser() {
@@ -15,6 +56,126 @@ function page() {
 
 		getUser();
 	}, []);
+
+	useEffect(() => {
+		if (!userId) return;
+		console.log("User ID:", userId);
+		async function updateGithubInfo() {
+			const { data: platformUserData, error } = await supabase
+				.from("platform_accounts")
+				.select("*")
+				.eq("user_id", userId)
+				.eq("platform", "github")
+				.maybeSingle();
+
+			if (error) {
+				console.error(error);
+			}
+
+			if (!platformUserData) {
+				setGithubUsername("");
+			} else {
+				setGithubUsername(platformUserData.platform_username);
+				const res = await fetch(
+					`https://api.github.com/users/${platformUserData.platform_username}/events`,
+					{
+						headers: {
+							Authorization: `Bearer ${platformUserData.access_token}`,
+							Accept: "application/vnd.github+json",
+						},
+					},
+				);
+
+				const githubActivity = await res.json();
+				const filtered = githubActivity.filter(
+					(activity) =>
+						activity.type === "PushEvent" ||
+						activity.type === "CreateEvent",
+				);
+				const logs = [];
+
+				for (let index = 0; index < filtered.length; index++) {
+					const element = filtered[index];
+
+					if (element.type === "PushEvent") {
+						const before = element.payload.before,
+							head = element.payload.head;
+
+						const response = await fetch(
+							`https://api.github.com/repos/${element.repo.name}/compare/${before}...${head}`,
+							{
+								headers: {
+									Authorization: `Bearer ${platformUserData.access_token}`,
+									Accept: "application/vnd.github+json",
+								},
+							},
+						);
+
+						const info = await response.json(),
+							commitCount = info.total_commits;
+
+						logs.push({
+							action: element.type,
+							user_id: userId,
+							subject: element.repo.name,
+							commit_count: commitCount,
+							platform: "Github",
+							date: element.created_at,
+						});
+					}
+				}
+
+				const map = [];
+
+				for (const item of logs) {
+					const prev = map[map.length - 1];
+
+					if (prev && prev.subject === item.subject) {
+						prev.commit_count += item.commit_count;
+					} else {
+						map.push({
+							...item,
+						});
+					}
+				}
+				if (map.length === 0) return;
+				const { data: logExists, error } = await supabase
+					.from("activity_log")
+					.select("*")
+					.eq("date", map[0].date)
+					.eq("subject", map[0].subject);
+
+				if (error) {
+					console.error(error);
+				}
+
+				if (logExists.length === 0) {
+					const { data, error } = await supabase
+						.from("activity_log")
+						.insert(map)
+						.select();
+
+					if (error) {
+						console.error(error);
+					}
+				}
+			}
+		}
+
+		async function updateActivity() {
+			const { data: activityData, error } = await supabase
+				.from("activity_log")
+				.select("*")
+				.eq("user_id", userId)
+				.order("date", { ascending: false })
+				.limit(10);
+			setActivity(activityData);
+			console.log("Activity Data:", activityData);
+		}
+
+		updateGithubInfo();
+		updateActivity();
+	}, [userId]);
 
 	function connectGithub() {
 		window.location.href = "/api/github/authorize";
@@ -44,12 +205,16 @@ function page() {
 											alt="Github"
 										/>
 										<span className="thick">Github:</span>{" "}
-										<span
-											className="trans"
-											onClick={connectGithub}
-										>
-											Connect
-										</span>
+										{githubUsername === "" ? (
+											<span
+												className="trans"
+												onClick={connectGithub}
+											>
+												Connect
+											</span>
+										) : (
+											<span>@{githubUsername}</span>
+										)}
 									</div>
 									<div className="item">
 										<img
@@ -74,56 +239,24 @@ function page() {
 							<div className="panel recent-activity">
 								<h4>Recent Activity</h4>
 								<div className="logs">
-									<div className="log">
-										<div className="text">
-											Pushed 4 commits to dev-tracker —{" "}
-											<span>2 hrs ago</span>
+									{activity.length === 0 ? (
+										<div>
+											No recent activity to display.
 										</div>
-										<img
-											src="/platforms/github.png"
-											alt="Github"
-										/>
-									</div>
-									<div className="log">
-										<div className="text">
-											Pushed 4 commits to dev-tracker —{" "}
-											<span>2 hrs ago</span>
-										</div>
-										<img
-											src="/platforms/github.png"
-											alt="Github"
-										/>
-									</div>
-									<div className="log">
-										<div className="text">
-											Pushed 4 commits to dev-tracker —{" "}
-											<span>2 hrs ago</span>
-										</div>
-										<img
-											src="/platforms/github.png"
-											alt="Github"
-										/>
-									</div>
-									<div className="log">
-										<div className="text">
-											Pushed 4 commits to dev-tracker —{" "}
-											<span>2 hrs ago</span>
-										</div>
-										<img
-											src="/platforms/github.png"
-											alt="Github"
-										/>
-									</div>
-									<div className="log">
-										<div className="text">
-											Pushed 4 commits to dev-tracker —{" "}
-											<span>2 hrs ago</span>
-										</div>
-										<img
-											src="/platforms/github.png"
-											alt="Github"
-										/>
-									</div>
+									) : (
+										activity.map((activity, index) => (
+											<div className="log" key={index}>
+												<div className="text">
+													{activity.action ? 'Pushed' : 'Created'} {activity.commit_count} commits to {activity.subject}
+													—<span> {timeAgo(activity.date)}</span>
+												</div>
+												<img
+													src={`/platforms/${activity.platform.toLowerCase()}.png`}
+													alt={activity.platform}
+												/>
+											</div>
+										))
+									)}
 								</div>
 							</div>
 						</div>
