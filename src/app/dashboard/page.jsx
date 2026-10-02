@@ -8,9 +8,14 @@ import "./dashboard.css";
 function page() {
 	const [userId, setUserId] = useState();
 	const [activity, setActivity] = useState([]);
-	const [githubUsername, setGithubUsername] = useState("");
+	const [githubInfo, setGithubInfo] = useState({
+		activity: [],
+		username: "",
+		commitsNo: 0,
+		reposNo: 0,
+	});
 
-    function timeAgo(date) {
+	function timeAgo(date) {
 		const seconds = Math.floor(
 			(Date.now() - new Date(date).getTime()) / 1000,
 		);
@@ -73,9 +78,17 @@ function page() {
 			}
 
 			if (!platformUserData) {
-				setGithubUsername("");
+				setGithubInfo((prev) => ({
+					...prev,
+					username: "",
+					commitsNo: 0,
+					reposNo: 0,
+				}));
 			} else {
-				setGithubUsername(platformUserData.platform_username);
+				setGithubInfo((prev) => ({
+					...prev,
+					username: platformUserData.platform_username,
+				}));
 				const res = await fetch(
 					`https://api.github.com/users/${platformUserData.platform_username}/events`,
 					{
@@ -86,7 +99,20 @@ function page() {
 					},
 				);
 
+				const userRes = await fetch(`https://api.github.com/user`, {
+					headers: {
+						Authorization: `Bearer ${platformUserData.access_token}`,
+						Accept: "application/vnd.github+json",
+					},
+				});
+				const userData = await userRes.json();
+				setGithubInfo((prev) => ({
+					...prev,
+					reposNo: userData.public_repos,
+				}));
+
 				const githubActivity = await res.json();
+
 				const filtered = githubActivity.filter(
 					(activity) =>
 						activity.type === "PushEvent" ||
@@ -122,37 +148,66 @@ function page() {
 							platform: "Github",
 							date: element.created_at,
 						});
+					} else {
+						logs.push({
+							action: element.type,
+							user_id: userId,
+							subject: element.repo.name,
+							platform: "Github",
+							date: element.created_at,
+						});
 					}
 				}
 
 				const map = [];
+				let commitCount = 0;
 
 				for (const item of logs) {
 					const prev = map[map.length - 1];
 
-					if (prev && prev.subject === item.subject) {
-						prev.commit_count += item.commit_count;
+					if (
+						prev &&
+						prev.subject === item.subject &&
+						prev.action === "PushEvent" &&
+						item.action === "PushEvent"
+					) {
+						prev.commit_count += item.commit_count ?? 0;
 					} else {
 						map.push({
 							...item,
 						});
 					}
+
+					commitCount += item.commit_count ?? 0;
 				}
+				setGithubInfo((prev) => ({ ...prev, commitsNo: commitCount }));
+
 				if (map.length === 0) return;
-				const { data: logExists, error } = await supabase
+
+				const { data: existingLogs, error } = await supabase
 					.from("activity_log")
-					.select("*")
-					.eq("date", map[0].date)
-					.eq("subject", map[0].subject);
+					.select("date, action, subject")
+					.eq("user_id", userId);
 
 				if (error) {
 					console.error(error);
+					return;
 				}
 
-				if (logExists.length === 0) {
+				const newLogs = map.filter(
+					(item) =>
+						!existingLogs.some(
+							(existing) =>
+								existing.date === item.date &&
+								existing.action === item.action &&
+								existing.subject === item.subject,
+						),
+				);
+
+				if (newLogs.length > 0) {
 					const { data, error } = await supabase
 						.from("activity_log")
-						.insert(map)
+						.insert(newLogs)
 						.select();
 
 					if (error) {
@@ -162,19 +217,30 @@ function page() {
 			}
 		}
 
-		async function updateActivity() {
+		async function updateGithubActivity() {
 			const { data: activityData, error } = await supabase
 				.from("activity_log")
 				.select("*")
 				.eq("user_id", userId)
-				.order("date", { ascending: false })
-				.limit(10);
-			setActivity(activityData);
-			console.log("Activity Data:", activityData);
+				.order("date", { ascending: false });
+
+			if (error) {
+				console.error(error);
+			}
+
+			setGithubInfo((prev) => ({
+				...prev,
+				activity: activityData ?? [],
+			}));
+			setActivity(activityData ?? []);
 		}
 
-		updateGithubInfo();
-		updateActivity();
+		async function load() {
+			await updateGithubInfo();
+			await updateGithubActivity();
+		}
+
+		load();
 	}, [userId]);
 
 	function connectGithub() {
@@ -205,7 +271,7 @@ function page() {
 											alt="Github"
 										/>
 										<span className="thick">Github:</span>{" "}
-										{githubUsername === "" ? (
+										{githubInfo.username === "" ? (
 											<span
 												className="trans"
 												onClick={connectGithub}
@@ -213,7 +279,7 @@ function page() {
 												Connect
 											</span>
 										) : (
-											<span>@{githubUsername}</span>
+											<span>@{githubInfo.username}</span>
 										)}
 									</div>
 									<div className="item">
@@ -247,8 +313,23 @@ function page() {
 										activity.map((activity, index) => (
 											<div className="log" key={index}>
 												<div className="text">
-													{activity.action ? 'Pushed' : 'Created'} {activity.commit_count} commits to {activity.subject}
-													—<span> {timeAgo(activity.date)}</span>
+													{activity.action ===
+													"PushEvent"
+														? "Pushed"
+														: "Created"}{" "}
+													{activity.action ===
+														"PushEvent" &&
+														activity.commit_count +
+															" commits to"}{" "}
+													{activity.subject.replace(
+														`${githubInfo.username}/`,
+														"",
+													)}
+													—
+													<span>
+														{" "}
+														{timeAgo(activity.date)}
+													</span>
 												</div>
 												<img
 													src={`/platforms/${activity.platform.toLowerCase()}.png`}
@@ -275,14 +356,15 @@ function page() {
 											src="/icons/branch.svg"
 											alt="Commit count"
 										/>
-										47 commits
+										{githubInfo.commitsNo} commits (past 30
+										days)
 									</div>
 									<div className="item">
 										<img
 											src="/icons/repo.svg"
 											alt="Repo count"
 										/>
-										8 repositories
+										{githubInfo.reposNo} repositories
 									</div>
 									<div className="item">
 										<img
