@@ -28,3 +28,14 @@ CREATE TABLE sessions (
   session_token TEXT NOT NULL UNIQUE,
   expiry TIMESTAMP NOT NULL
 );
+
+CREATE TABLE leetcode_stats (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  username TEXT NOT NULL,
+  ranking TEXT NOT NULL,
+  totalProblemsSolved TEXT NOT NULL,
+  easyProblems TEXT NOT NULL,
+  mediumProblems TEXT NOT NULL,
+  hardProblems TEXT NOT NULL
+);
