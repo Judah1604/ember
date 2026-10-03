@@ -172,7 +172,6 @@ function page() {
 					.from("activity_log")
 					.upsert(map, {
 						onConflict: "user_id,platform,action,subject,date",
-						ignoreDuplicates: true,
 					});
 
 				if (error) {
@@ -221,8 +220,8 @@ function page() {
 				}));
 			} else {
 				const accessToken = platformUserData.access_token;
-				const params30 = calcDays(30);
-				const params60 = calcDays(60);
+				const { params: params30 } = calcDays(30);
+				const { params: params60 } = calcDays(60);
 
 				const streakRes = await fetch(
 					"https://hackatime.hackclub.com/api/v1/authenticated/streak",
@@ -326,6 +325,7 @@ function page() {
 					action: "Solved ",
 					user_id: userId,
 					subject: activity.title,
+					difficulty: activity.difficulty,
 					platform: "Leetcode",
 					date: new Date(activity.timestamp * 1000).toISOString(),
 				});

@@ -50,5 +50,5 @@ export function calcDays(days) {
 		end_date: endDate,
 	});
 
-	return params;
+	return { params, startDate, endDate };
 }
