@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import SideBar from "./SideBar";
 import { supabase } from "@/lib/supabase";
 import "./dashboard.css";
+import fetchLeetcodeActivity from "@/scripts/fetchFromLeetcode";
 
 function page() {
 	const [userId, setUserId] = useState();
@@ -22,6 +23,7 @@ function page() {
 		mostActiveProject: "",
 	});
 	const [leetcodeInfo, setLeetcodeInfo] = useState({
+		activity: [],
 		username: "",
 		ranking: 0,
 		totalProblemsSolved: 0,
@@ -340,8 +342,6 @@ function page() {
 				.eq("user_id", userId)
 				.single();
 
-			console.log("Leetcode Data:", platformUserData);
-
 			if (error) {
 				console.error(error);
 			}
@@ -357,12 +357,72 @@ function page() {
 				hardProblems: platformUserData?.hardproblems ?? 0,
 			}));
 		}
+		async function updateLeetcodeActivity() {
+			const { data: platformUserData, error: platformError } =
+				await supabase
+					.from("platform_accounts")
+					.select("*")
+					.eq("user_id", userId)
+					.eq("platform", "leetcode")
+					.maybeSingle();
+
+			if (platformError) {
+				console.error(platformError);
+			}
+			let logs = [];
+			const leetcodeActivity = await fetchLeetcodeActivity(
+				platformUserData?.platform_username,
+			);
+
+			for (const activity of leetcodeActivity) {
+				logs.push({
+					action: "Solved ",
+					user_id: userId,
+					subject: activity.title,
+					platform: "Leetcode",
+					date: new Date(activity.timestamp * 1000).toISOString(),
+				});
+			}
+
+			const { error: upsertError } = await supabase
+				.from("activity_log")
+				.upsert(logs, {
+					onConflict: "user_id,platform,action,subject,date",
+					ignoreDuplicates: true,
+				});
+
+			if (upsertError) {
+				console.error(upsertError);
+				return;
+			}
+
+			const { data: activityData, error } = await supabase
+				.from("activity_log")
+				.select("*")
+				.eq("user_id", userId)
+				.order("date", { ascending: false });
+
+			if (error) {
+				console.error(error);
+			}
+
+			setLeetcodeInfo((prev) => ({
+				...prev,
+				activity: activityData ?? [],
+			}));
+			const sortedActivity = [...activityData].sort(
+				(a, b) => new Date(b.date) - new Date(a.date),
+			);
+
+			setActivity(sortedActivity);
+		}
 
 		async function load() {
 			await updateGithubInfo();
 			await updateGithubActivity();
 			await updateHackatimeInfo();
 			await updateLeetcodeInfo();
+			await updateLeetcodeActivity();
 		}
 
 		load();
@@ -371,7 +431,6 @@ function page() {
 	function connectGithub() {
 		window.location.href = "/api/github/authorize";
 	}
-
 	function connectHackatime() {
 		window.location.href = "/api/hackatime/authorize";
 	}
@@ -475,38 +534,45 @@ function page() {
 												No recent activity to display.
 											</div>
 										) : (
-											activity.map((activity, index) => (
-												<div
-													className="log"
-													key={index}
-												>
-													<div className="text">
-														{activity.action ===
-														"PushEvent"
-															? "Pushed"
-															: "Created"}{" "}
-														{activity.action ===
-															"PushEvent" &&
-															activity.commit_count +
-																" commits to"}{" "}
-														{activity.subject.replace(
-															`${githubInfo.username}/`,
-															"",
-														)}
-														—
-														<span>
-															{" "}
-															{timeAgo(
-																activity.date,
+											activity
+												.slice(0, 10)
+												.map((activity, index) => (
+													<div
+														className="log"
+														key={index}
+													>
+														<div className="text">
+															{activity.action ===
+															"PushEvent"
+																? "Pushed"
+																: activity.action ===
+																	  "CreateEvent"
+																	? "Created"
+																	: "Solved"}{" "}
+															{activity.action ===
+																"PushEvent" &&
+																activity.commit_count +
+																	" commits to"}{" "}
+															{activity.subject.replace(
+																`${githubInfo.username}/`,
+																"",
 															)}
-														</span>
+															—
+															<span>
+																{" "}
+																{timeAgo(
+																	activity.date,
+																)}
+															</span>
+														</div>
+														<img
+															src={`/platforms/${activity.platform.toLowerCase()}.png`}
+															alt={
+																activity.platform
+															}
+														/>
 													</div>
-													<img
-														src={`/platforms/${activity.platform.toLowerCase()}.png`}
-														alt={activity.platform}
-													/>
-												</div>
-											))
+												))
 										)}
 									</div>
 								</div>
@@ -643,7 +709,10 @@ function page() {
 												src="/icons/ranking.svg"
 												alt="Ranking"
 											/>
-											Ranking: {Number(leetcodeInfo.ranking).toLocaleString()}
+											Ranking:{" "}
+											{Number(
+												leetcodeInfo.ranking,
+											).toLocaleString()}
 										</div>
 									</div>
 								</div>
