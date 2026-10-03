@@ -1,6 +1,6 @@
 .dashboard {
 	display: grid;
-	grid-template-columns: 1fr 3.5fr;
+	grid-template-columns: 1fr 3.7fr;
 	gap: 40px;
 	height: 100vh;
 
@@ -55,10 +55,10 @@
 			}
 
 			.recent-activity {
-				height: 230px;
-				max-height: 230px;
-                position: relative;
-                overflow: hidden;
+				height: 250px;
+				max-height: 250px;
+				position: relative;
+				overflow: hidden;
 
 				&::after {
 					content: "";
@@ -69,8 +69,8 @@
 						rgb(16 16 16 / 10%),
 						rgb(16 16 16 / 100%)
 					);
-                    bottom: 0;
-                    left: 0;
+					bottom: 0;
+					left: 0;
 				}
 			}
 
@@ -203,5 +203,18 @@
 				}
 			}
 		}
+	}
+}
+
+.loader {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin-top: 20px;
+	flex-direction: column;
+
+	.contain {
+		transform: rotate(45deg);
+		margin-bottom: -40px;
 	}
 }

@@ -19,7 +19,8 @@
     "next": "16.3.6",
     "pg": "^8.23.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "react-spinners": "^0.17.1"
   },
   "devDependencies": {
     "babel-plugin-react-compiler": "1.0.0",

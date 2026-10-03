@@ -1,12 +1,15 @@
 "use client";
-import { getCurrentUser } from "@/scripts/getCurrentUser";
 import React, { useEffect, useState } from "react";
-import SideBar from "./SideBar";
 import { supabase } from "@/lib/supabase";
-import "./dashboard.css";
+import { getCurrentUser } from "@/scripts/getCurrentUser";
 import fetchLeetcodeActivity from "@/scripts/fetchFromLeetcode";
+import { ClimbingBoxLoader } from "react-spinners";
+import SideBar from "./SideBar";
+import { calcDays, timeAgo } from "@/scripts/dateAndTime";
+import "./dashboard.css";
 
 function page() {
+	const [isLoading, setIsLoading] = useState(true);
 	const [userId, setUserId] = useState();
 	const [activity, setActivity] = useState([]);
 	const [githubInfo, setGithubInfo] = useState({
@@ -31,63 +34,6 @@ function page() {
 		mediumProblems: 0,
 		hardProblems: 0,
 	});
-
-	function timeAgo(date) {
-		const seconds = Math.floor(
-			(Date.now() - new Date(date).getTime()) / 1000,
-		);
-
-		if (seconds < 60) {
-			return `${seconds}s ago`;
-		}
-
-		const minutes = Math.floor(seconds / 60);
-
-		if (minutes < 60) {
-			return `${minutes}m ago`;
-		}
-
-		const hours = Math.floor(minutes / 60);
-
-		if (hours < 24) {
-			return `${hours}h ago`;
-		}
-
-		const days = Math.floor(hours / 24);
-
-		if (days < 30) {
-			return `${days}d ago`;
-		}
-
-		const months = Math.floor(days / 30);
-
-		if (months < 12) {
-			return `${months}mo ago`;
-		}
-
-		const years = Math.floor(days / 365);
-
-		return `${years}y ago`;
-	}
-
-	function calcDays(days) {
-		const today = new Date();
-
-		const daysAgo = new Date();
-		daysAgo.setDate(today.getDate() - days);
-
-		const formatDate = (date) => date.toISOString().split("T")[0];
-
-		const startDate = formatDate(daysAgo);
-		const endDate = formatDate(today);
-
-		const params = new URLSearchParams({
-			start_date: startDate,
-			end_date: endDate,
-		});
-
-		return params;
-	}
 
 	useEffect(() => {
 		async function getUser() {
@@ -218,6 +164,7 @@ function page() {
 					commitCount += item.commit_count ?? 0;
 				}
 				setGithubInfo((prev) => ({ ...prev, commitsNo: commitCount }));
+				console.log(map);
 
 				if (map.length === 0) return;
 
@@ -395,34 +342,37 @@ function page() {
 				console.error(upsertError);
 				return;
 			}
+		}
 
-			const { data: activityData, error } = await supabase
+		async function updateActivity() {
+			const { data, error } = await supabase
 				.from("activity_log")
 				.select("*")
-				.eq("user_id", userId)
-				.order("date", { ascending: false });
+				.eq("user_id", userId);
 
 			if (error) {
 				console.error(error);
+				return;
 			}
 
-			setLeetcodeInfo((prev) => ({
-				...prev,
-				activity: activityData ?? [],
-			}));
-			const sortedActivity = [...activityData].sort(
+			const sorted = [...data].sort(
 				(a, b) => new Date(b.date) - new Date(a.date),
 			);
 
-			setActivity(sortedActivity);
+			setActivity(sorted);
 		}
 
 		async function load() {
-			await updateGithubInfo();
-			await updateGithubActivity();
-			await updateHackatimeInfo();
-			await updateLeetcodeInfo();
-			await updateLeetcodeActivity();
+			try {
+				updateGithubInfo();
+				updateGithubActivity();
+				updateHackatimeInfo();
+				updateLeetcodeInfo();
+				updateLeetcodeActivity();
+				updateActivity();
+			} finally {
+				setIsLoading(false);
+			}
 		}
 
 		load();
@@ -449,275 +399,301 @@ function page() {
 					</div>
 					<div className="overall-activity">
 						<h3>Overall Activity</h3>
-						<div className="panels">
-							<div className="col1">
-								<div className="panel general">
-									<div className="info">
-										<h1>
-											{hackatimeInfo.totalHours > 0
-												? `${Math.floor(hackatimeInfo.totalHours / 3600)} hrs ${Math.floor((hackatimeInfo.totalHours % 3600) / 60)} min`
-												: "0 hrs 0 min"}{" "}
-										</h1>
-										<p>Tracked the last 60 days</p>
+
+						{isLoading ? (
+							<div className="loader">
+								<div className="contain">
+									<ClimbingBoxLoader
+										color="#f54927"
+										size={16}
+										speedMultiplier={1.3}
+									/>
+								</div>
+								Loading your data...
+							</div>
+						) : (
+							<div className="panels">
+								<div className="col1">
+									<div className="panel general">
+										<div className="info">
+											<h1>
+												{hackatimeInfo.totalHours > 0
+													? `${Math.floor(hackatimeInfo.totalHours / 3600)} hrs ${Math.floor((hackatimeInfo.totalHours % 3600) / 60)} min`
+													: "0 hrs 0 min"}{" "}
+											</h1>
+											<p>Tracked the last 60 days</p>
+										</div>
+										<div className="connected">
+											<div className="item">
+												<img
+													src="/platforms/github.png"
+													alt="Github"
+												/>
+												<span className="thick">
+													Github:
+												</span>{" "}
+												{githubInfo.username === "" ? (
+													<span
+														className="trans"
+														onClick={connectGithub}
+													>
+														Connect
+													</span>
+												) : (
+													<span>
+														@{githubInfo.username}
+													</span>
+												)}
+											</div>
+											<div className="item">
+												<img
+													src="/platforms/hackatime.png"
+													alt="Hackatime"
+												/>
+												<span className="thick">
+													Hackatime:
+												</span>{" "}
+												{hackatimeInfo.username ===
+												"" ? (
+													<span
+														className="trans"
+														onClick={
+															connectHackatime
+														}
+													>
+														Connect
+													</span>
+												) : (
+													<span>
+														@
+														{hackatimeInfo.username}
+													</span>
+												)}
+											</div>
+											<div className="item">
+												<img
+													src="/platforms/leetcode.png"
+													alt="Leetcode"
+												/>
+												<span className="thick">
+													Leetcode:
+												</span>{" "}
+												{leetcodeInfo.username ===
+												"" ? (
+													<span
+														className="trans"
+														onClick={
+															connectLeetcode
+														}
+													>
+														Connect
+													</span>
+												) : (
+													<span>
+														@{leetcodeInfo.username}
+													</span>
+												)}
+											</div>
+										</div>
 									</div>
-									<div className="connected">
-										<div className="item">
+									<div className="panel recent-activity">
+										<h4>Recent Activity</h4>
+										<div className="logs">
+											{activity.length === 0 ? (
+												<div>
+													No recent activity to
+													display.
+												</div>
+											) : (
+												activity
+													.slice(0, 10)
+													.map((activity, index) => (
+														<div
+															className="log"
+															key={index}
+														>
+															<div className="text">
+																{activity.action ===
+																"PushEvent"
+																	? "Pushed"
+																	: activity.action ===
+																		  "CreateEvent"
+																		? "Created"
+																		: "Solved"}{" "}
+																{activity.action ===
+																	"PushEvent" &&
+																	activity.commit_count +
+																		" commits to"}{" "}
+																{activity.subject.replace(
+																	`${githubInfo.username}/`,
+																	"",
+																)}
+																—
+																<span>
+																	{" "}
+																	{timeAgo(
+																		activity.date,
+																	)}
+																</span>
+															</div>
+															<img
+																src={`/platforms/${activity.platform.toLowerCase()}.png`}
+																alt={
+																	activity.platform
+																}
+															/>
+														</div>
+													))
+											)}
+										</div>
+									</div>
+								</div>
+								<div className="col2">
+									<div className="panel platform-info">
+										<div className="name">
 											<img
 												src="/platforms/github.png"
 												alt="Github"
 											/>
-											<span className="thick">
-												Github:
-											</span>{" "}
-											{githubInfo.username === "" ? (
-												<span
-													className="trans"
-													onClick={connectGithub}
-												>
-													Connect
-												</span>
-											) : (
-												<span>
-													@{githubInfo.username}
-												</span>
-											)}
+											Github
 										</div>
-										<div className="item">
+										<div className="items">
+											<div className="item">
+												<img
+													src="/icons/branch.svg"
+													alt="Commit count"
+												/>
+												{githubInfo.commitsNo} commits
+												(past 30 days)
+											</div>
+											<div className="item">
+												<img
+													src="/icons/repo.svg"
+													alt="Repo count"
+												/>
+												{githubInfo.reposNo}{" "}
+												repositories
+											</div>
+											<div className="item">
+												<img
+													src="/icons/streak.svg"
+													alt="streak count"
+												/>
+												Current streak: 9 days
+											</div>
+										</div>
+									</div>
+									<div className="panel platform-info">
+										<div className="name">
 											<img
 												src="/platforms/hackatime.png"
 												alt="Hackatime"
 											/>
-											<span className="thick">
-												Hackatime:
-											</span>{" "}
-											{hackatimeInfo.username === "" ? (
-												<span
-													className="trans"
-													onClick={connectHackatime}
-												>
-													Connect
-												</span>
-											) : (
-												<span>
-													@{hackatimeInfo.username}
-												</span>
-											)}
+											Hackatime
 										</div>
-										<div className="item">
+										<div className="items">
+											<div className="item">
+												<img
+													src="/icons/clock.svg"
+													alt="Clock"
+												/>
+												{hackatimeInfo.hours > 0
+													? `${Math.floor(hackatimeInfo.hours / 3600)} hrs ${Math.floor((hackatimeInfo.hours % 3600) / 60)} min`
+													: "0 hrs 0 min"}{" "}
+												(in 30 days)
+											</div>
+
+											<div className="item">
+												<img
+													src="/icons/streak.svg"
+													alt="streak count"
+												/>
+												Current streak:{" "}
+												{hackatimeInfo.streak} days
+											</div>
+											<div className="item">
+												<img
+													src="/icons/star.svg"
+													alt="star"
+												/>
+												<p>
+													<span>
+														Most active
+														project:{" "}
+													</span>
+													{
+														hackatimeInfo.mostActiveProject
+													}
+												</p>
+											</div>
+										</div>
+									</div>
+									<div className="panel platform-info">
+										<div className="name">
 											<img
 												src="/platforms/leetcode.png"
 												alt="Leetcode"
 											/>
-											<span className="thick">
-												Leetcode:
-											</span>{" "}
-											{leetcodeInfo.username === "" ? (
-												<span
-													className="trans"
-													onClick={connectLeetcode}
-												>
-													Connect
-												</span>
-											) : (
-												<span>
-													@{leetcodeInfo.username}
-												</span>
-											)}
+											Leetcode
 										</div>
-									</div>
-								</div>
-								<div className="panel recent-activity">
-									<h4>Recent Activity</h4>
-									<div className="logs">
-										{activity.length === 0 ? (
-											<div>
-												No recent activity to display.
-											</div>
-										) : (
-											activity
-												.slice(0, 10)
-												.map((activity, index) => (
-													<div
-														className="log"
-														key={index}
-													>
-														<div className="text">
-															{activity.action ===
-															"PushEvent"
-																? "Pushed"
-																: activity.action ===
-																	  "CreateEvent"
-																	? "Created"
-																	: "Solved"}{" "}
-															{activity.action ===
-																"PushEvent" &&
-																activity.commit_count +
-																	" commits to"}{" "}
-															{activity.subject.replace(
-																`${githubInfo.username}/`,
-																"",
-															)}
-															—
-															<span>
-																{" "}
-																{timeAgo(
-																	activity.date,
-																)}
-															</span>
-														</div>
-														<img
-															src={`/platforms/${activity.platform.toLowerCase()}.png`}
-															alt={
-																activity.platform
-															}
-														/>
-													</div>
-												))
-										)}
-									</div>
-								</div>
-							</div>
-							<div className="col2">
-								<div className="panel platform-info">
-									<div className="name">
-										<img
-											src="/platforms/github.png"
-											alt="Github"
-										/>
-										Github
-									</div>
-									<div className="items">
-										<div className="item">
-											<img
-												src="/icons/branch.svg"
-												alt="Commit count"
-											/>
-											{githubInfo.commitsNo} commits (past
-											30 days)
-										</div>
-										<div className="item">
-											<img
-												src="/icons/repo.svg"
-												alt="Repo count"
-											/>
-											{githubInfo.reposNo} repositories
-										</div>
-										<div className="item">
-											<img
-												src="/icons/streak.svg"
-												alt="streak count"
-											/>
-											Current streak: 9 days
-										</div>
-									</div>
-								</div>
-								<div className="panel platform-info">
-									<div className="name">
-										<img
-											src="/platforms/hackatime.png"
-											alt="Hackatime"
-										/>
-										Hackatime
-									</div>
-									<div className="items">
-										<div className="item">
-											<img
-												src="/icons/clock.svg"
-												alt="Clock"
-											/>
-											{hackatimeInfo.hours > 0
-												? `${Math.floor(hackatimeInfo.hours / 3600)} hrs ${Math.floor((hackatimeInfo.hours % 3600) / 60)} min`
-												: "0 hrs 0 min"}{" "}
-											(in 30 days)
-										</div>
-
-										<div className="item">
-											<img
-												src="/icons/streak.svg"
-												alt="streak count"
-											/>
-											Current streak:{" "}
-											{hackatimeInfo.streak} days
-										</div>
-										<div className="item">
-											<img
-												src="/icons/star.svg"
-												alt="star"
-											/>
-											<p>
-												<span>
-													Most active project:{" "}
-												</span>
+										<div className="items">
+											<div className="item">
+												<img
+													src="/icons/activity.svg"
+													alt="Activity"
+												/>
 												{
-													hackatimeInfo.mostActiveProject
-												}
-											</p>
-										</div>
-									</div>
-								</div>
-								<div className="panel platform-info">
-									<div className="name">
-										<img
-											src="/platforms/leetcode.png"
-											alt="Leetcode"
-										/>
-										Leetcode
-									</div>
-									<div className="items">
-										<div className="item">
-											<img
-												src="/icons/activity.svg"
-												alt="Activity"
-											/>
-											{leetcodeInfo.totalProblemsSolved}{" "}
-											problems solved
-										</div>
-										<div className="item">
-											<img
-												src="/icons/activity.svg"
-												alt="Activity"
-											/>
-											<div className="categories">
-												<div className="item">
-													<span>
-														{
-															leetcodeInfo.easyProblems
-														}
-													</span>
-													Easy
-												</div>
-												<div className="item">
-													<span>
-														{
-															leetcodeInfo.mediumProblems
-														}
-													</span>
-													Medium
-												</div>
-												<div className="item">
-													<span>
-														{
-															leetcodeInfo.hardProblems
-														}
-													</span>
-													Hard
+													leetcodeInfo.totalProblemsSolved
+												}{" "}
+												problems solved
+											</div>
+											<div className="item">
+												<img
+													src="/icons/activity.svg"
+													alt="Activity"
+												/>
+												<div className="categories">
+													<div className="item">
+														<span>
+															{
+																leetcodeInfo.easyProblems
+															}
+														</span>
+														Easy
+													</div>
+													<div className="item">
+														<span>
+															{
+																leetcodeInfo.mediumProblems
+															}
+														</span>
+														Medium
+													</div>
+													<div className="item">
+														<span>
+															{
+																leetcodeInfo.hardProblems
+															}
+														</span>
+														Hard
+													</div>
 												</div>
 											</div>
-										</div>
-										<div className="item">
-											<img
-												src="/icons/ranking.svg"
-												alt="Ranking"
-											/>
-											Ranking:{" "}
-											{Number(
-												leetcodeInfo.ranking,
-											).toLocaleString()}
+											<div className="item">
+												<img
+													src="/icons/ranking.svg"
+													alt="Ranking"
+												/>
+												Ranking:{" "}
+												{Number(
+													leetcodeInfo.ranking,
+												).toLocaleString()}
+											</div>
 										</div>
 									</div>
 								</div>
 							</div>
-						</div>
+						)}
 					</div>
 				</div>
 			</div>
