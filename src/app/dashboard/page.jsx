@@ -14,6 +14,14 @@ function page() {
 		commitsNo: 0,
 		reposNo: 0,
 	});
+	const [hackatimeInfo, setHackatimeInfo] = useState({
+		activity: [],
+		username: "",
+		hours: 0,
+		totalHours: 0,
+		streak: 0,
+		mostActiveProject: "",
+	});
 
 	function timeAgo(date) {
 		const seconds = Math.floor(
@@ -53,6 +61,25 @@ function page() {
 		return `${years}y ago`;
 	}
 
+	function calcDays(days) {
+		const today = new Date();
+
+		const daysAgo = new Date();
+		daysAgo.setDate(today.getDate() - days);
+
+		const formatDate = (date) => date.toISOString().split("T")[0];
+
+		const startDate = formatDate(daysAgo);
+		const endDate = formatDate(today);
+
+		const params = new URLSearchParams({
+			start_date: startDate,
+			end_date: endDate,
+		});
+
+		return params;
+	}
+
 	useEffect(() => {
 		async function getUser() {
 			const user = await getCurrentUser();
@@ -65,6 +92,7 @@ function page() {
 	useEffect(() => {
 		if (!userId) return;
 		console.log("User ID:", userId);
+
 		async function updateGithubInfo() {
 			const { data: platformUserData, error } = await supabase
 				.from("platform_accounts")
@@ -184,39 +212,19 @@ function page() {
 
 				if (map.length === 0) return;
 
-				const { data: existingLogs, error } = await supabase
+				const { error } = await supabase
 					.from("activity_log")
-					.select("date, action, subject")
-					.eq("user_id", userId);
+					.upsert(map, {
+						onConflict: "user_id,platform,action,subject,date",
+						ignoreDuplicates: true,
+					});
 
 				if (error) {
 					console.error(error);
 					return;
 				}
-
-				const newLogs = map.filter(
-					(item) =>
-						!existingLogs.some(
-							(existing) =>
-								existing.date === item.date &&
-								existing.action === item.action &&
-								existing.subject === item.subject,
-						),
-				);
-
-				if (newLogs.length > 0) {
-					const { data, error } = await supabase
-						.from("activity_log")
-						.insert(newLogs)
-						.select();
-
-					if (error) {
-						console.error(error);
-					}
-				}
 			}
 		}
-
 		async function updateGithubActivity() {
 			const { data: activityData, error } = await supabase
 				.from("activity_log")
@@ -234,10 +242,95 @@ function page() {
 			}));
 			setActivity(activityData ?? []);
 		}
+		async function updateHackatimeInfo() {
+			const { data: platformUserData, error } = await supabase
+				.from("platform_accounts")
+				.select("*")
+				.eq("user_id", userId)
+				.eq("platform", "hackatime")
+				.maybeSingle();
+
+			if (error) {
+				console.error(error);
+			}
+
+			if (!platformUserData) {
+				setHackatimeInfo((prev) => ({
+					...prev,
+					username: "",
+					hours: 0,
+                    totalHours: 0,
+					streak: 0,
+					mostActiveProject: "",
+				}));
+			} else {
+				const accessToken = platformUserData.access_token;
+				const params30 = calcDays(30);
+				const params60 = calcDays(60);
+
+				const streakRes = await fetch(
+					"https://hackatime.hackclub.com/api/v1/authenticated/streak",
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+							Accept: "application/vnd.github+json",
+						},
+					},
+				);
+
+				const hours30Res = await fetch(
+					`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params30}`,
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+						},
+					},
+				);
+				const hours60Res = await fetch(
+					`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params60}`,
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+						},
+					},
+				);
+
+				const mostActiveProjectRes = await fetch(
+					"https://hackatime.hackclub.com/api/v1/authenticated/projects",
+					{
+						headers: {
+							Authorization: `Bearer ${accessToken}`,
+						},
+					},
+				);
+
+				const streakData = await streakRes.json();
+				const hours30Data = await hours30Res.json();
+				const hours60Data = await hours60Res.json();
+				const mostActiveProjectData = await mostActiveProjectRes.json();
+
+				const mostActiveProject = mostActiveProjectData.projects.reduce(
+					(most, project) =>
+						project.total_seconds > most.total_seconds
+							? project
+							: most,
+				);
+
+				setHackatimeInfo((prev) => ({
+					...prev,
+					username: platformUserData.platform_username,
+					streak: streakData.streak_days ?? 0,
+					hours: hours30Data.total_seconds ?? 0,
+                    totalHours: hours60Data.total_seconds ?? 0,
+					mostActiveProject: mostActiveProject?.name ?? "",
+				}));
+			}
+		}
 
 		async function load() {
 			await updateGithubInfo();
 			await updateGithubActivity();
+			await updateHackatimeInfo();
 		}
 
 		load();
@@ -245,6 +338,10 @@ function page() {
 
 	function connectGithub() {
 		window.location.href = "/api/github/authorize";
+	}
+
+	function connectHackatime() {
+		window.location.href = "/api/hackatime/authorize";
 	}
 
 	return (
@@ -261,8 +358,12 @@ function page() {
 						<div className="col1">
 							<div className="panel general">
 								<div className="info">
-									<h1>127 hrs 34 min</h1>
-									<p>Tracked this month</p>
+									<h1>
+										{hackatimeInfo.totalHours > 0
+											? `${Math.floor(hackatimeInfo.totalHours / 3600)} hrs ${Math.floor((hackatimeInfo.totalHours % 3600) / 60)} min`
+											: "0 hrs 0 min"}{" "}
+									</h1>
+									<p>Tracked the last 60 days</p>
 								</div>
 								<div className="connected">
 									<div className="item">
@@ -290,7 +391,18 @@ function page() {
 										<span className="thick">
 											Hackatime:
 										</span>{" "}
-										<span className="trans">Connect</span>
+										{hackatimeInfo.username === "" ? (
+											<span
+												className="trans"
+												onClick={connectHackatime}
+											>
+												Connect
+											</span>
+										) : (
+											<span>
+												@{hackatimeInfo.username}
+											</span>
+										)}
 									</div>
 									<div className="item">
 										<img
@@ -389,7 +501,10 @@ function page() {
 											src="/icons/clock.svg"
 											alt="Clock"
 										/>
-										47 hrs 12 min
+										{hackatimeInfo.hours > 0
+											? `${Math.floor(hackatimeInfo.hours / 3600)} hrs ${Math.floor((hackatimeInfo.hours % 3600) / 60)} min`
+											: "0 hrs 0 min"}{" "}
+										(in 30 days)
 									</div>
 
 									<div className="item">
@@ -397,13 +512,14 @@ function page() {
 											src="/icons/streak.svg"
 											alt="streak count"
 										/>
-										Current streak: 6 days
+										Current streak: {hackatimeInfo.streak}{" "}
+										days
 									</div>
 									<div className="item">
 										<img src="/icons/star.svg" alt="star" />
 										<p>
 											<span>Most active project: </span>
-											tracker
+											{hackatimeInfo.mostActiveProject}
 										</p>
 									</div>
 								</div>
