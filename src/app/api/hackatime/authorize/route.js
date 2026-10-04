@@ -6,7 +6,7 @@ export async function GET() {
 	const redirecturi =
 		process.env.NODE_ENV === "development"
 			? "http://localhost:3000/api/hackatime/callback"
-			: "http://ember-streak.vercel.app/api/hackatime/callback";
+			: "https://ember-streak.vercel.app/api/hackatime/callback";
 
 	const hackUrl = new URL("https://hackatime.hackclub.com/oauth/authorize");
 

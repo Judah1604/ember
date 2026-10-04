@@ -7,14 +7,17 @@ export async function GET(request) {
 	const cookieStore = await cookies();
 	const { searchParams } = new URL(request.url);
 	const savedState = cookieStore.get("hackatime_oauth_state")?.value;
-	const returnedState = searchParams.get("state"); // from the callback URL
+	const returnedState = searchParams.get("state"); 
+    const redirecturi =
+		process.env.NODE_ENV === "development"
+			? "http://localhost:3000/api/hackatime/callback"
+			: "https://ember-streak.vercel.app/api/hackatime/callback";
 
 	if (!savedState || savedState !== returnedState) {
 		return NextResponse.redirect(new URL("/dashboard", request.url));
 	}
 
 	const code = searchParams.get("code");
-	// console.log("code", code);
 
 	const response = await fetch("https://hackatime.hackclub.com/oauth/token", {
 		method: "POST",
@@ -26,7 +29,7 @@ export async function GET(request) {
 			client_id: process.env.HACKATIME_UID,
 			client_secret: process.env.HACKATIME_SECRET,
 			code: code,
-			redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/github/callback`,
+			redirect_uri: redirecturi,
 			grant_type: "authorization_code",
 		}),
 	});
