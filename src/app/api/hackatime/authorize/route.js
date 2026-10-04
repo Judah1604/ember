@@ -3,14 +3,16 @@ import { cookies } from "next/headers";
 import generateSessionToken from "@/scripts/generateSessionToken";
 
 export async function GET() {
+	const redirecturi =
+		process.env.NODE_ENV === "development"
+			? "http://localhost:3000/api/hackatime/callback"
+			: "http://ember-streak.vercel.app/api/hackatime/callback";
+
 	const hackUrl = new URL("https://hackatime.hackclub.com/oauth/authorize");
 
 	hackUrl.searchParams.set("client_id", process.env.HACKATIME_UID);
 
-	hackUrl.searchParams.set(
-		"redirect_uri",
-		"http://localhost:3000/api/hackatime/callback",
-	);
+	hackUrl.searchParams.set("redirect_uri", redirecturi);
 
 	hackUrl.searchParams.set("response_type", "code");
 	hackUrl.searchParams.set("scope", "profile read");

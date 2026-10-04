@@ -41,7 +41,7 @@ function page() {
 			const user = await getCurrentUser();
 			setUserId(user);
 
-            await getUsername(user)
+			await getUsername(user);
 		}
 
 		async function getUsername(userId) {
@@ -54,7 +54,7 @@ function page() {
 			if (error) {
 				console.error(error);
 			}
-			setUsername(data.username)
+			setUsername(data.username);
 		}
 
 		getUser();
@@ -308,16 +308,29 @@ function page() {
 				console.error(error);
 			}
 
-			setLeetcodeInfo((prev) => ({
-				...prev,
-				username: platformUserData?.username ?? "",
-				ranking: platformUserData?.ranking ?? 0,
-				totalProblemsSolved:
-					platformUserData?.total_problems_solved ?? 0,
-				easyProblems: platformUserData?.easyproblems ?? 0,
-				mediumProblems: platformUserData?.mediumproblems ?? 0,
-				hardProblems: platformUserData?.hardproblems ?? 0,
-			}));
+			if (!platformUserData) {
+				setLeetcodeInfo((prev) => ({
+					...prev,
+					activity: [],
+					username: "",
+					ranking: 0,
+					totalProblemsSolved: 0,
+					easyProblems: 0,
+					mediumProblems: 0,
+					hardProblems: 0,
+				}));
+			} else {
+				setLeetcodeInfo((prev) => ({
+					...prev,
+					username: platformUserData?.username ?? "",
+					ranking: platformUserData?.ranking ?? 0,
+					totalProblemsSolved:
+						platformUserData?.total_problems_solved ?? 0,
+					easyProblems: platformUserData?.easyproblems ?? 0,
+					mediumProblems: platformUserData?.mediumproblems ?? 0,
+					hardProblems: platformUserData?.hardproblems ?? 0,
+				}));
+			}
 		}
 		async function updateLeetcodeActivity() {
 			const { data: platformUserData, error: platformError } =
@@ -331,32 +344,46 @@ function page() {
 			if (platformError) {
 				console.error(platformError);
 			}
-			let logs = [];
-			const leetcodeActivity = await fetchLeetcodeActivity(
-				platformUserData?.platform_username,
-			);
 
-			for (const activity of leetcodeActivity) {
-				logs.push({
-					action: "Solved ",
-					user_id: userId,
-					subject: activity.title,
-					difficulty: activity.difficulty,
-					platform: "Leetcode",
-					date: new Date(activity.timestamp * 1000).toISOString(),
-				});
-			}
+			if (!platformUserData) {
+				setLeetcodeInfo((prev) => ({
+					...prev,
+					activity: [],
+					username: "",
+					ranking: 0,
+					totalProblemsSolved: 0,
+					easyProblems: 0,
+					mediumProblems: 0,
+					hardProblems: 0,
+				}));
+			} else {
+				let logs = [];
+				const leetcodeActivity = await fetchLeetcodeActivity(
+					platformUserData?.platform_username,
+				);
 
-			const { error: upsertError } = await supabase
-				.from("activity_log")
-				.upsert(logs, {
-					onConflict: "user_id,platform,action,subject,date",
-					ignoreDuplicates: true,
-				});
+				for (const activity of leetcodeActivity) {
+					logs.push({
+						action: "Solved ",
+						user_id: userId,
+						subject: activity.title,
+						difficulty: activity.difficulty,
+						platform: "Leetcode",
+						date: new Date(activity.timestamp * 1000).toISOString(),
+					});
+				}
 
-			if (upsertError) {
-				console.error(upsertError);
-				return;
+				const { error: upsertError } = await supabase
+					.from("activity_log")
+					.upsert(logs, {
+						onConflict: "user_id,platform,action,subject",
+						ignoreDuplicates: true,
+					});
+
+				if (upsertError) {
+					console.error(upsertError);
+					return;
+				}
 			}
 		}
 
@@ -410,7 +437,19 @@ function page() {
 				<SideBar />
 				<div className="main">
 					<div className="header">
-						<h1>{username === '' ? 'Loading...' : `Welcome back, ${username}.`}</h1>
+						<h1>
+							{username === "" ? (
+								"Loading..."
+							) : (
+								<span>
+									Welcome back,{" "}
+									<span className="capitalize">
+										${username}
+									</span>
+									.
+								</span>
+							)}
+						</h1>
 						<p>Here’s your development activity at a glance.</p>
 					</div>
 					<div className="overall-activity">
