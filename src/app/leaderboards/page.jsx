@@ -5,12 +5,34 @@ import "@/app/styles/dashboard.css";
 import { calcDays } from "@/scripts/dateAndTime";
 import { supabase } from "@/lib/supabase";
 import { getUser } from "../scripts/getUser";
+import { getCurrentUser } from "@/scripts/getCurrentUser";
 
 function page() {
 	const [userId, setUserId] = useState();
+	const [username, setUsername] = useState("");
 
 	useEffect(() => {
-		getUser({ setUserId });
+		async function getUser() {
+			const user = await getCurrentUser();
+			setUserId(user);
+
+			await getUsername(user);
+		}
+
+		async function getUsername(userId) {
+			const { data, error } = await supabase
+				.from("users")
+				.select("username")
+				.eq("id", userId)
+				.single();
+
+			if (error) {
+				console.error(error);
+			}
+			setUsername(data.username);
+		}
+
+		getUser();
 	}, []);
 
 	useEffect(() => {
@@ -94,7 +116,12 @@ function page() {
 
 		async function load() {
 			const { startDate, endDate, params } = calcDays(30);
-			const embers = await calculateEmbers(userId, startDate, endDate, params);
+			const embers = await calculateEmbers(
+				userId,
+				startDate,
+				endDate,
+				params,
+			);
 			console.log(embers);
 		}
 

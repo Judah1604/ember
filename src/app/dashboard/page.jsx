@@ -10,6 +10,7 @@ import "./dashboard.css";
 
 function page() {
 	const [isLoading, setIsLoading] = useState(true);
+	const [username, setUsername] = useState("");
 	const [userId, setUserId] = useState();
 	const [activity, setActivity] = useState([]);
 	const [githubInfo, setGithubInfo] = useState({
@@ -39,6 +40,21 @@ function page() {
 		async function getUser() {
 			const user = await getCurrentUser();
 			setUserId(user);
+
+            await getUsername(user)
+		}
+
+		async function getUsername(userId) {
+			const { data, error } = await supabase
+				.from("users")
+				.select("username")
+				.eq("id", userId)
+				.single();
+
+			if (error) {
+				console.error(error);
+			}
+			setUsername(data.username)
 		}
 
 		getUser();
@@ -164,7 +180,6 @@ function page() {
 					commitCount += item.commit_count ?? 0;
 				}
 				setGithubInfo((prev) => ({ ...prev, commitsNo: commitCount }));
-				console.log(map);
 
 				if (map.length === 0) return;
 
@@ -172,6 +187,7 @@ function page() {
 					.from("activity_log")
 					.upsert(map, {
 						onConflict: "user_id,platform,action,subject,date",
+						ignoreDuplicates: true,
 					});
 
 				if (error) {
@@ -394,7 +410,7 @@ function page() {
 				<SideBar />
 				<div className="main">
 					<div className="header">
-						<h1>Good evening, Judah.</h1>
+						<h1>{username === '' ? 'Loading...' : `Welcome back, ${username}.`}</h1>
 						<p>Here’s your development activity at a glance.</p>
 					</div>
 					<div className="overall-activity">
