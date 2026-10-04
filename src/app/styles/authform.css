@@ -7,7 +7,7 @@
 
 	img {
 		height: 35px;
-        margin-bottom: -5px;
+		margin-bottom: -5px;
 	}
 
 	&.sign-up {
@@ -44,4 +44,23 @@
 .form-valid {
 	color: var(--red);
 	font-size: 0.9em;
+}
+
+@media screen and (max-width: 426px) {
+	.authform {
+		width: 90%;
+
+		.form-col {
+			flex-direction: column;
+		}
+
+		.btns {
+			flex-direction: column-reverse;
+			gap: 10px;
+
+			& > * {
+				width: 100%;
+			}
+		}
+	}
 }

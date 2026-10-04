@@ -90,7 +90,8 @@ h5 {
 
 	&:hover,
 	&:focus-visible,
-	&:active, &:disabled {
+	&:active,
+	&:disabled {
 		background-color: #f35e40 !important;
 	}
 }
@@ -107,25 +108,32 @@ h5 {
 }
 
 .form-control {
-    background-color: #171717;
-    color: white !important;
-    border: none;
-    outline: none;
-    padding: 10px 15px;
-    transition: background-color 0.3s ease;
+	background-color: #171717;
+	color: white !important;
+	border: none;
+	outline: none;
+	padding: 10px 15px;
+	transition: background-color 0.3s ease;
 
-    &::placeholder {
-        color: #4a4a4a;
-    }
+	&::placeholder {
+		color: #4a4a4a;
+	}
 
-    &:active, &:target, &:focus {
-        box-shadow: none;
-        background-color: #272727;
-    }
+	&:active,
+	&:target,
+	&:focus {
+		box-shadow: none;
+		background-color: #272727;
+	}
 }
 
 @media (prefers-color-scheme: dark) {
 	html {
 		color-scheme: dark;
+	}
+}
+@media screen and (max-width: 426px) {
+	.header h1 {
+		font-size: calc(2rem + 1.5vw);
 	}
 }
