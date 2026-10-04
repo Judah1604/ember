@@ -376,7 +376,7 @@ function page() {
 				const { error: upsertError } = await supabase
 					.from("activity_log")
 					.upsert(logs, {
-						onConflict: "user_id,platform,action,subject",
+						onConflict: "user_id,platform,action,subject,date",
 						ignoreDuplicates: true,
 					});
 
