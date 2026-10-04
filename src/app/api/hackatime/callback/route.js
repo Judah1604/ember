@@ -26,7 +26,7 @@ export async function GET(request) {
 			client_id: process.env.HACKATIME_UID,
 			client_secret: process.env.HACKATIME_SECRET,
 			code: code,
-			redirect_uri: "http://localhost:3000/api/hackatime/callback",
+			redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/github/callback`,
 			grant_type: "authorization_code",
 		}),
 	});
@@ -48,7 +48,7 @@ export async function GET(request) {
 
 	const userId = await getCurrentUser();
 
-    const { data: platformExists, error } = await supabase
+	const { data: platformExists, error } = await supabase
 		.from("platform_accounts")
 		.select("*")
 		.eq("user_id", userId)
