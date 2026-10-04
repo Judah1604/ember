@@ -444,7 +444,7 @@ function page() {
 								<span>
 									Welcome back,{" "}
 									<span className="capitalize">
-										${username}
+										{username}
 									</span>
 									.
 								</span>
