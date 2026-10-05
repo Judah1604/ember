@@ -1,0 +1,125 @@
+.leaderboard {
+    width: 96%;
+    margin: 0 auto;
+
+	img {
+		width: 20px;
+		height: 20px;
+	}
+
+	.top {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+
+		.filters {
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			gap: 10px;
+
+			.period {
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				background-color: #101010;
+				border-radius: 15px;
+
+				.item {
+					padding: 18px 25px;
+					border-radius: 15px;
+					display: flex;
+					font-weight: 500;
+					cursor: pointer;
+					letter-spacing: -1px;
+
+					&.active {
+						color: #101010;
+						background-color: white;
+					}
+				}
+			}
+
+			.platform {
+				select {
+					color: white;
+					box-shadow: none;
+					outline: none;
+					border: none;
+					background-color: #101010;
+					padding: 18px 25px;
+					border-radius: 15px;
+					cursor: pointer;
+					width: 150px;
+					background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+					background-size: 20px 15px;
+					background-position: right 1rem center;
+					background-repeat: no-repeat;
+				}
+			}
+		}
+	}
+
+	.board {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 10px;
+
+		.item {
+			width: 100%;
+			padding: 25px;
+			display: flex;
+			align-items: center;
+            border-radius: 15px;
+            gap: 5px;
+
+            &.active {
+                border: 1px solid white;
+            }
+
+			.count {
+				width: 2%;
+				opacity: 0.2;
+			}
+
+			.text {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				width: 98%;
+
+                .name {
+                    font-weight: 500;
+                }
+
+				.score {
+					display: flex;
+					align-items: center;
+					gap: 4px;
+
+					img {
+						width: 12px;
+					}
+				}
+			}
+
+			&:nth-child(1) {
+				background: color-mix(in srgb, var(--red) 10%, transparent);
+                border: 1px solid var(--red);
+
+                .count {
+                    opacity: 1;
+                    color: var(--red);
+                }
+			}
+			&:nth-child(2) {
+				background: color-mix(in srgb, white 6%, transparent);
+			}
+			&:nth-child(3) {
+				background: color-mix(in srgb, white 2%, transparent);
+			}
+		}
+	}
+}

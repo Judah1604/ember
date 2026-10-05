@@ -55,6 +55,7 @@ function page() {
 				console.error(error);
 			}
 			setUsername(data.username);
+			console.log("Username", data.username);
 		}
 
 		getUser();
@@ -197,21 +198,23 @@ function page() {
 			}
 		}
 		async function updateGithubActivity() {
-			const { data: activityData, error } = await supabase
+			const { data: githubActivity, error } = await supabase
 				.from("activity_log")
 				.select("*")
 				.eq("user_id", userId)
+				.eq("platform", "Github")
 				.order("date", { ascending: false });
 
 			if (error) {
 				console.error(error);
 			}
 
+			console.log("Github Activity:", githubActivity);
 			setGithubInfo((prev) => ({
 				...prev,
-				activity: activityData ?? [],
+				activity: githubActivity ?? [],
 			}));
-			setActivity(activityData ?? []);
+			setActivity(githubActivity ?? []);
 		}
 		async function updateHackatimeInfo() {
 			const { data: platformUserData, error } = await supabase

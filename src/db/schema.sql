@@ -39,3 +39,14 @@ CREATE TABLE leetcode_stats (
   mediumProblems TEXT NOT NULL,
   hardProblems TEXT NOT NULL
 );
+
+CREATE TABLE embers (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  period TEXT NOT NULL,
+  github_score INTEGER NOT NULL,
+  leetcode_score INTEGER NOT NULL,
+  hackatime_score INTEGER NOT NULL,
+  total_score INTEGER NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);

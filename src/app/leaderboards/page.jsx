@@ -2,14 +2,15 @@
 import { useEffect, useState } from "react";
 import SideBar from "../dashboard/SideBar";
 import "@/app/styles/dashboard.css";
-import { calcDays } from "@/scripts/dateAndTime";
 import { supabase } from "@/lib/supabase";
-import { getUser } from "../scripts/getUser";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
+import './leaderboards.css'
+import calculateEmbers, { getRankings } from "../scripts/rankingEmbers";
 
 function page() {
 	const [userId, setUserId] = useState();
 	const [username, setUsername] = useState("");
+	const [rankings, setRankings] = useState([]);
 
 	useEffect(() => {
 		async function getUser() {
@@ -35,104 +36,99 @@ function page() {
 		getUser();
 	}, []);
 
-	useEffect(() => {
-		if (!userId) return;
-		console.log("User ID:", userId);
+	// useEffect(() => {
+	// 	if (!userId) return;
+	// 	console.log("User ID:", userId);
 
-		// 1 commit = 1, 1 easy = 2, 1 medium = 4, 1 hard = 6, 1 hour = 2
+	// 	async function load() {
 
-		async function calculateEmbers(userId, startDate, endDate, params) {
-			const { data: activityData, error: activityErr } = await supabase
-				.from("activity_log")
-				.select("*")
-				.eq("user_id", userId)
-				.order("date", { ascending: false })
-				.gte("date", startDate)
-				.lte("date", endDate);
+	// 		const fetchedRankings = await getRankings();
+	//         console.log(fetchedRankings)
+	//         setRankings(fetchedRankings)
+	// 	}
 
-			const { data: platformUserData, error } = await supabase
-				.from("platform_accounts")
-				.select("*")
-				.eq("user_id", userId)
-				.eq("platform", "hackatime")
-				.maybeSingle();
-
-			if (activityErr) {
-				console.error(activityErr);
-			}
-
-			if (error) {
-				console.error(error);
-			}
-			const accessToken = platformUserData.access_token;
-
-			const githubData = activityData.filter(
-				(activity) => activity.platform === "Github",
-			);
-			const leetcodeData = activityData.filter(
-				(activity) => activity.platform === "Leetcode",
-			);
-
-			const githubEmbers = githubData.reduce(
-				(total, activity) => total + (activity.commit_count ?? 0),
-				0,
-			);
-			let leetEmbers = 0;
-
-			for (let index = 0; index < leetcodeData.length; index++) {
-				const element = leetcodeData[index];
-
-				if (element.difficulty === "Easy") {
-					leetEmbers += 2;
-				} else if (element.difficulty === "Medium") {
-					leetEmbers += 4;
-				} else if (element.difficulty === "Hard") {
-					leetEmbers += 6;
-				}
-			}
-
-			const hoursRes = await fetch(
-				`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params}`,
-				{
-					headers: {
-						Authorization: `Bearer ${accessToken}`,
-					},
-				},
-			);
-
-			const hoursData = await hoursRes.json();
-			const totalSeconds = hoursData.total_seconds;
-			const hackatimeEmbers = Math.floor((totalSeconds / 3600) * 2);
-			const totalEmbers = githubEmbers + leetEmbers + hackatimeEmbers;
-
-			return {
-				userId: userId,
-				github: githubEmbers,
-				leetcode: leetEmbers,
-				hackatime: hackatimeEmbers,
-				totalScore: totalEmbers,
-			};
-		}
-
-		async function load() {
-			const { startDate, endDate, params } = calcDays(30);
-			const embers = await calculateEmbers(
-				userId,
-				startDate,
-				endDate,
-				params,
-			);
-			console.log(embers);
-		}
-
-		load();
-	}, [userId]);
+	// 	load();
+	// }, [userId]);
 
 	return (
 		<div className="dashboard">
 			<SideBar />
-			<div className="main">
-				<h1>Leaderboard</h1>
+			<div className="main leaderboard">
+				<div className="header">
+					<h1>Leaderboards</h1>
+					<p>here are the rankings...</p>
+				</div>
+				<div className="top mt-4">
+					<div className="filters">
+						<div className="period">
+							<div className="item active">Last 24 hours</div>
+							<div className="item">Last 7 days</div>
+							<div className="item">Last 30 days</div>
+						</div>
+						<div className="platform">
+							<select
+								name="plaftorm select"
+								className="form-select"
+							>
+								<option value="All">All</option>
+								<option value="Github">Github</option>
+								<option value="Hackatime">Hackatime</option>
+								<option value="Leetcode">Leetcode</option>
+							</select>
+						</div>
+					</div>
+
+					<div className="desc">
+						<img src="/icons/ember.svg" alt="Ember" />
+						<span>= embers</span>
+					</div>
+				</div>
+				<div className="board mt-3">
+					<div className="item">
+						<div className="count">1</div>
+						<div className="text">
+							<span className="name">Judah</span>
+
+							<div className="score">
+								<div className="content">301</div>
+								<img src="/icons/ember.svg" alt="Ember" />
+							</div>
+						</div>
+					</div>
+					<div className="item">
+						<div className="count">1</div>
+						<div className="text">
+							<span className="name">Judah</span>
+
+							<div className="score">
+								<div className="content">301</div>
+								<img src="/icons/ember.svg" alt="Ember" />
+							</div>
+						</div>
+					</div>
+					<div className="item">
+						<div className="count">1</div>
+						<div className="text">
+							<span className="name">Judah</span>
+
+							<div className="score">
+								<div className="content">301</div>
+								<img src="/icons/ember.svg" alt="Ember" />
+							</div>
+						</div>
+					</div>
+					<div className="item">
+						<div className="count">1</div>
+						<div className="text">
+							<span className="name">Judah</span>
+
+							<div className="score">
+								<div className="content">301</div>
+								<img src="/icons/ember.svg" alt="Ember" />
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
