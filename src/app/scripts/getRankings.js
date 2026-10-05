@@ -64,6 +64,7 @@ export async function getRankings() {
 
 	const embers1 = onedayRankings.map((ranking) => ({
 		user_id: ranking.userId,
+        username: ranking.username,
 		period: "1d",
 		github_score: ranking.github,
 		leetcode_score: ranking.leetcode,
@@ -72,6 +73,7 @@ export async function getRankings() {
 	}));
 	const embers7 = weekRankings.map((ranking) => ({
 		user_id: ranking.userId,
+		username: ranking.username,
 		period: "7d",
 		github_score: ranking.github,
 		leetcode_score: ranking.leetcode,
@@ -80,6 +82,7 @@ export async function getRankings() {
 	}));
 	const embers30 = monthRanking.map((ranking) => ({
 		user_id: ranking.userId,
+		username: ranking.username,
 		period: "30d",
 		github_score: ranking.github,
 		leetcode_score: ranking.leetcode,
@@ -96,7 +99,7 @@ export async function getRankings() {
 	const { error: error30 } = await supabase.from("embers").upsert(embers30, {
 		onConflict: "user_id,period",
 	});
-    
+
 	if (error1) throw error1;
 	if (error7) throw error7;
 	if (error30) throw error30;

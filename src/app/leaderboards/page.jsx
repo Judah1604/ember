@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
 import "./leaderboards.css";
 import { getStoredRankings } from "../scripts/rankingEmbers";
+import { getRankings } from "../scripts/getRankings";
+import { ClimbingBoxLoader } from "react-spinners";
 
 function page() {
 	const [userId, setUserId] = useState();
@@ -13,7 +15,8 @@ function page() {
 	const [rankings, setRankings] = useState([]);
 	const [filteredRankings, setFilteredRankings] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const [selected, setSelected] = useState("1d");
+	const [selectedPeriod, setSelectedPeriod] = useState("1d");
+	const [selectedPlatform, setSelectedPlatform] = useState("All");
 
 	useEffect(() => {
 		async function getUser() {
@@ -40,10 +43,32 @@ function page() {
 	}, []);
 
 	useEffect(() => {
-		setFilteredRankings((prev) =>
-			prev.filter((r) => r.period === selected),
+		const periodRankings = rankings.filter(
+			(r) => r.period === selectedPeriod,
 		);
-	}, [selected]);
+
+		let sorted;
+
+		if (selectedPlatform === "Github") {
+			sorted = [...periodRankings]
+				.sort((a, b) => b.github_score - a.github_score)
+				.filter((r) => r.github_score !== 0);
+		} else if (selectedPlatform === "Hackatime") {
+			sorted = [...periodRankings]
+				.sort((a, b) => b.hackatime_score - a.hackatime_score)
+				.filter((r) => r.hackatime_score !== 0);
+		} else if (selectedPlatform === "Leetcode") {
+			sorted = [...periodRankings]
+				.sort((a, b) => b.leetcode_score - a.leetcode_score)
+				.filter((r) => r.leetcode_score !== 0);
+		} else {
+			sorted = [...periodRankings]
+				.sort((a, b) => b.total_score - a.total_score)
+				.filter((r) => r.total_score !== 0);
+		}
+
+		setFilteredRankings(sorted);
+	}, [selectedPeriod, selectedPlatform, rankings]);
 
 	useEffect(() => {
 		if (!userId) return;
@@ -51,6 +76,7 @@ function page() {
 
 		async function load() {
 			try {
+				// await getRankings();
 				const fetchedRankings = await getStoredRankings();
 				setRankings(fetchedRankings);
 			} finally {
@@ -60,6 +86,18 @@ function page() {
 
 		load();
 	}, [userId]);
+
+	const handleChange = (event) => {
+		setSelectedPlatform(event.target.value);
+	};
+
+	const getScore = (item) => {
+		if (selectedPlatform === "Github") return item.github_score;
+		if (selectedPlatform === "Hackatime") return item.hackatime_score;
+		if (selectedPlatform === "Leetcode") return item.leetcode_score;
+
+		return item.total_score;
+	};
 
 	return (
 		<div className="dashboard">
@@ -74,25 +112,31 @@ function page() {
 						<div className="period">
 							<div
 								className={
-									selected === "1d" ? "item active" : "item"
+									selectedPeriod === "1d"
+										? "item active"
+										: "item"
 								}
-								onClick={() => setSelected("1d")}
+								onClick={() => setSelectedPeriod("1d")}
 							>
 								Last 24 hours
 							</div>
 							<div
 								className={
-									selected === "7d" ? "item active" : "item"
+									selectedPeriod === "7d"
+										? "item active"
+										: "item"
 								}
-								onClick={() => setSelected("7d")}
+								onClick={() => setSelectedPeriod("7d")}
 							>
 								Last 7 days
 							</div>
 							<div
 								className={
-									selected === "30d" ? "item active" : "item"
+									selectedPeriod === "30d"
+										? "item active"
+										: "item"
 								}
-								onClick={() => setSelected("30d")}
+								onClick={() => setSelectedPeriod("30d")}
 							>
 								Last 30 days
 							</div>
@@ -101,6 +145,8 @@ function page() {
 							<select
 								name="plaftorm select"
 								className="form-select"
+								value={selectedPlatform}
+								onChange={handleChange}
 							>
 								<option value="All">All</option>
 								<option value="Github">Github</option>
@@ -116,7 +162,7 @@ function page() {
 					</div>
 				</div>
 				<div className="board mt-3">
-					{isLoading && rankings.length > 0 ? (
+					{isLoading ? (
 						<div className="loader">
 							<div className="contain">
 								<ClimbingBoxLoader
@@ -125,10 +171,14 @@ function page() {
 									speedMultiplier={1.3}
 								/>
 							</div>
-							Loading your data...
+							Loading the leaderboard...
 						</div>
+					) : filteredRankings.length === 0 ? (
+						<>
+							<div className="mt-3">No data to show...</div>
+						</>
 					) : (
-						rankings.map((item, index) => (
+						filteredRankings.map((item, index) => (
 							<div
 								className={
 									item.user_id === userId
@@ -145,7 +195,7 @@ function page() {
 
 									<div className="score">
 										<div className="content">
-											{item.totalScore}
+											{getScore(item)}
 										</div>
 										<img
 											src="/icons/ember.svg"
