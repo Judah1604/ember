@@ -1,7 +1,6 @@
 // 1 commit = 1, 1 easy = 2, 1 medium = 4, 1 hard = 6, 1 hour = 2
 
 import { supabase } from "@/lib/supabase";
-import { calcDays } from "@/scripts/dateAndTime";
 
 export async function calculateEmbers(userId, startDate, endDate, params) {
 	const { data: activityData, error: activityErr } = await supabase

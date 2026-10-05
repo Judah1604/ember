@@ -96,8 +96,21 @@ export async function getRankings() {
 	const { error: error30 } = await supabase.from("embers").upsert(embers30, {
 		onConflict: "user_id,period",
 	});
+	if (error1) {
+		throw error1;
+	}
 
-	if (error1) console.error(error1);
-	if (error7) console.error(error7);
-	if (error30) console.error(error30);
+	if (error7) {
+		throw error7;
+	}
+
+	if (error30) {
+		throw error30;
+	}
+
+	console.log("USERS:", users);
+	console.log("DISTINCT IDS:", distinctIDs);
+	console.log("1D:", embers1);
+	console.log("7D:", embers7);
+	console.log("30D:", embers30);
 }
