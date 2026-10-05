@@ -1,0 +1,54 @@
+.settings {
+	h2 {
+		font-weight: 600;
+	}
+	.section {
+		margin-bottom: 30px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+
+		p {
+			font-weight: 500;
+		}
+	}
+
+	.disconnect {
+		.items {
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr;
+			gap: 20px;
+			margin-top: 20px;
+
+			.item {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				flex-direction: column;
+				gap: 20px;
+				padding: 20px;
+				background-color: #101010;
+				border-radius: 20px;
+				font-weight: 500;
+                
+				span {
+					text-transform: capitalize;
+				}
+
+				.text {
+					display: flex;
+					gap: 10px;
+				}
+
+				.btn {
+					width: 100%;
+				}
+
+				img {
+					width: 25px;
+					height: 25px;
+				}
+			}
+		}
+	}
+}

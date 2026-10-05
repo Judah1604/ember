@@ -5,6 +5,7 @@ function SideBar() {
 	const navlinks = [
 		{ title: "Dashboard", to: "/dashboard" },
 		{ title: "Leaderboards", to: "/leaderboards" },
+		{ title: "Docs", to: "/documentation" },
 		{ title: "Settings", to: "/settings" },
 	];
 

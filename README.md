@@ -1,36 +1,38 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Ember
 
-## Getting Started
+A streak tracker and leaderboard for a group that wants to stay honest about who's actually showing up.
 
-First, run the development server:
+Ember pulls real activity from GitHub, LeetCode, and Hackatime into one place, scores it, and ranks everyone against each other. No self-reporting, no vibes, just what actually happened.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Live:** https://ember-streak.vercel.app
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## What it does
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- Connect your GitHub, LeetCode, and Hackatime accounts
+- Activity syncs in automatically and gets logged, deduplicated against what's already stored
+- Each platform's activity resolves into one unified score, "Embers"
+- See where you rank, overall and per platform, across 1 day, 7 day, and 30 day windows
+- A public leaderboard, so the group can actually compete
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How it's built
 
-## Learn More
+**Auth, hand-rolled.** Sessions, password hashing, and token generation were built from scratch rather than handed off to a managed provider. Password hashing uses bcrypt. Session tokens are generated with Node's built-in `crypto` module and only ever stored as a hash, the raw token lives in an `httpOnly` cookie and nowhere else.
 
-To learn more about Next.js, take a look at the following resources:
+**Three real integrations, three different shapes of problem:**
+- **GitHub** — OAuth, then pulled via the Events API, grouped by consecutive same-repo activity, and compared against commit ranges to get real counts
+- **Hackatime** — OAuth, same integration pattern as GitHub, applied to a different API shape
+- **LeetCode** — no official public API, integrated against their internal GraphQL endpoint directly
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Database: Postgres, via Supabase.** Schema designed and written by hand, `users`, `platform_accounts`, `sessions`, `activity_log` and more, each with real foreign key relationships, not auto-generated. Activity is stored raw (including zero-activity entries), with scoring and filtering handled at query time rather than baked into storage.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Scoring.** Each platform's activity resolves into a weighted composite score. Multi-platform queries use the platform's own weighting rather than a flat sum, so no single platform can quietly dominate the leaderboard.
 
-## Deploy on Vercel
+## What's left
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Sign out
+- Disconnect a connected platform account (without losing historical activity)
+- Hover breakdown on the leaderboard, see the per-platform split behind any user's total score
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Why
+
+Built in a week to actually learn databases, sessions, and real third-party API integration, not by reading about them, by building something a real group of people would actually use and compete on.

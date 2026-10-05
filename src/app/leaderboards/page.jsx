@@ -11,7 +11,6 @@ import { ClimbingBoxLoader } from "react-spinners";
 
 function page() {
 	const [userId, setUserId] = useState();
-	const [username, setUsername] = useState("");
 	const [rankings, setRankings] = useState([]);
 	const [filteredRankings, setFilteredRankings] = useState([]);
 	const [isLoading, setIsLoading] = useState(true);
@@ -23,20 +22,6 @@ function page() {
 			const user = await getCurrentUser();
 			setUserId(user);
 
-			await getUsername(user);
-		}
-
-		async function getUsername(userId) {
-			const { data, error } = await supabase
-				.from("users")
-				.select("username")
-				.eq("id", userId)
-				.single();
-
-			if (error) {
-				console.error(error);
-			}
-			setUsername(data.username);
 		}
 
 		getUser();

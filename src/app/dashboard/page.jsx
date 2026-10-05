@@ -301,11 +301,12 @@ function page() {
 			}
 		}
 		async function updateLeetcodeInfo() {
+            if (!userId) return;
 			const { data: platformUserData, error } = await supabase
 				.from("leetcode_stats")
 				.select("*")
 				.eq("user_id", userId)
-				.single();
+				.maybeSingle();
 
 			if (error) {
 				console.error(error);
@@ -314,7 +315,7 @@ function page() {
 			if (!platformUserData) {
 				setLeetcodeInfo((prev) => ({
 					...prev,
-					activity: [],
+					activity: [], 
 					username: "",
 					ranking: 0,
 					totalProblemsSolved: 0,
