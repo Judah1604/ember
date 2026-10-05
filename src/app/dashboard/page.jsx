@@ -55,7 +55,6 @@ function page() {
 				console.error(error);
 			}
 			setUsername(data.username);
-			console.log("Username", data.username);
 		}
 
 		getUser();
@@ -159,36 +158,40 @@ function page() {
 					}
 				}
 
-				const map = [];
 				let commitCount = 0;
 
-				for (const item of logs) {
-					const prev = map[map.length - 1];
+				const map = {};
 
-					if (
-						prev &&
-						prev.subject === item.subject &&
-						prev.action === "PushEvent" &&
-						item.action === "PushEvent"
-					) {
-						prev.commit_count += item.commit_count ?? 0;
+				for (const item of logs) {
+					const date = item.date.slice(0, 10);
+
+					const key = `${item.user_id}-${item.platform}-${item.action}-${item.subject}-${date}`;
+
+					if (map[key]) {
+						map[key].commit_count =
+							(map[key].commit_count ?? 0) +
+							(item.commit_count ?? 0);
 					} else {
-						map.push({
+						map[key] = {
 							...item,
-						});
+							date,
+						};
 					}
 
 					commitCount += item.commit_count ?? 0;
 				}
+
+
+				const uniqueLogs = Object.values(map);
 				setGithubInfo((prev) => ({ ...prev, commitsNo: commitCount }));
 
-				if (map.length === 0) return;
+				if (uniqueLogs.length === 0) return;
+                console.log(uniqueLogs)
 
 				const { error } = await supabase
 					.from("activity_log")
-					.upsert(map, {
+					.upsert(uniqueLogs, {
 						onConflict: "user_id,platform,action,subject,date",
-						ignoreDuplicates: true,
 					});
 
 				if (error) {
@@ -209,7 +212,6 @@ function page() {
 				console.error(error);
 			}
 
-			console.log("Github Activity:", githubActivity);
 			setGithubInfo((prev) => ({
 				...prev,
 				activity: githubActivity ?? [],
