@@ -4,13 +4,16 @@ import SideBar from "../dashboard/SideBar";
 import "@/app/styles/dashboard.css";
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
-import './leaderboards.css'
-import calculateEmbers, { getRankings } from "../scripts/rankingEmbers";
+import "./leaderboards.css";
+import { getStoredRankings } from "../scripts/rankingEmbers";
 
 function page() {
 	const [userId, setUserId] = useState();
 	const [username, setUsername] = useState("");
 	const [rankings, setRankings] = useState([]);
+	const [filteredRankings, setFilteredRankings] = useState([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [selected, setSelected] = useState("1d");
 
 	useEffect(() => {
 		async function getUser() {
@@ -36,19 +39,27 @@ function page() {
 		getUser();
 	}, []);
 
-	// useEffect(() => {
-	// 	if (!userId) return;
-	// 	console.log("User ID:", userId);
+	useEffect(() => {
+		setFilteredRankings((prev) =>
+			prev.filter((r) => r.period === selected),
+		);
+	}, [selected]);
 
-	// 	async function load() {
+	useEffect(() => {
+		if (!userId) return;
+		console.log("User ID:", userId);
 
-	// 		const fetchedRankings = await getRankings();
-	//         console.log(fetchedRankings)
-	//         setRankings(fetchedRankings)
-	// 	}
+		async function load() {
+			try {
+				const fetchedRankings = await getStoredRankings();
+				setRankings(fetchedRankings);
+			} finally {
+				setIsLoading(false);
+			}
+		}
 
-	// 	load();
-	// }, [userId]);
+		load();
+	}, [userId]);
 
 	return (
 		<div className="dashboard">
@@ -61,9 +72,30 @@ function page() {
 				<div className="top mt-4">
 					<div className="filters">
 						<div className="period">
-							<div className="item active">Last 24 hours</div>
-							<div className="item">Last 7 days</div>
-							<div className="item">Last 30 days</div>
+							<div
+								className={
+									selected === "1d" ? "item active" : "item"
+								}
+								onClick={() => setSelected("1d")}
+							>
+								Last 24 hours
+							</div>
+							<div
+								className={
+									selected === "7d" ? "item active" : "item"
+								}
+								onClick={() => setSelected("7d")}
+							>
+								Last 7 days
+							</div>
+							<div
+								className={
+									selected === "30d" ? "item active" : "item"
+								}
+								onClick={() => setSelected("30d")}
+							>
+								Last 30 days
+							</div>
 						</div>
 						<div className="platform">
 							<select
@@ -84,50 +116,46 @@ function page() {
 					</div>
 				</div>
 				<div className="board mt-3">
-					<div className="item">
-						<div className="count">1</div>
-						<div className="text">
-							<span className="name">Judah</span>
-
-							<div className="score">
-								<div className="content">301</div>
-								<img src="/icons/ember.svg" alt="Ember" />
+					{isLoading && rankings.length > 0 ? (
+						<div className="loader">
+							<div className="contain">
+								<ClimbingBoxLoader
+									color="#f54927"
+									size={16}
+									speedMultiplier={1.3}
+								/>
 							</div>
+							Loading your data...
 						</div>
-					</div>
-					<div className="item">
-						<div className="count">1</div>
-						<div className="text">
-							<span className="name">Judah</span>
+					) : (
+						rankings.map((item, index) => (
+							<div
+								className={
+									item.user_id === userId
+										? "item active"
+										: "item"
+								}
+								key={index}
+							>
+								<div className="count">{index + 1}</div>
+								<div className="text">
+									<span className="name">
+										{item.username}
+									</span>
 
-							<div className="score">
-								<div className="content">301</div>
-								<img src="/icons/ember.svg" alt="Ember" />
+									<div className="score">
+										<div className="content">
+											{item.totalScore}
+										</div>
+										<img
+											src="/icons/ember.svg"
+											alt="Ember"
+										/>
+									</div>
+								</div>
 							</div>
-						</div>
-					</div>
-					<div className="item">
-						<div className="count">1</div>
-						<div className="text">
-							<span className="name">Judah</span>
-
-							<div className="score">
-								<div className="content">301</div>
-								<img src="/icons/ember.svg" alt="Ember" />
-							</div>
-						</div>
-					</div>
-					<div className="item">
-						<div className="count">1</div>
-						<div className="text">
-							<span className="name">Judah</span>
-
-							<div className="score">
-								<div className="content">301</div>
-								<img src="/icons/ember.svg" alt="Ember" />
-							</div>
-						</div>
-					</div>
+						))
+					)}
 				</div>
 			</div>
 		</div>

@@ -26,7 +26,7 @@ export async function calculateEmbers(userId, startDate, endDate, params) {
 	if (error) {
 		console.error(error);
 	}
-	const accessToken = platformUserData.access_token;
+	const accessToken = platformUserData?.access_token;
 
 	const githubData = activityData.filter(
 		(activity) => activity.platform === "Github",
@@ -53,22 +53,36 @@ export async function calculateEmbers(userId, startDate, endDate, params) {
 		}
 	}
 
-	const hoursRes = await fetch(
-		`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params}`,
-		{
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
+	let hackatimeEmbers = 0;
+	if (accessToken) {
+		const hoursRes = await fetch(
+			`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params}`,
+			{
+				headers: {
+					Authorization: `Bearer ${accessToken}`,
+				},
 			},
-		},
-	);
+		);
+		const hoursData = await hoursRes.json();
+		const totalSeconds = hoursData.total_seconds;
+		hackatimeEmbers = Math.floor((totalSeconds / 3600) * 2);
+	}
 
-	const hoursData = await hoursRes.json();
-	const totalSeconds = hoursData.total_seconds;
-	const hackatimeEmbers = Math.floor((totalSeconds / 3600) * 2);
 	const totalEmbers = githubEmbers + leetEmbers + hackatimeEmbers;
+
+	const { data: user, err: userErr } = await supabase
+		.from("users")
+		.select("username")
+		.eq("id", userId)
+		.single();
+
+	if (userErr) {
+		console.error(userErr);
+	}
 
 	return {
 		userId: userId,
+		username: user.username,
 		github: githubEmbers,
 		leetcode: leetEmbers,
 		hackatime: hackatimeEmbers,
@@ -76,38 +90,15 @@ export async function calculateEmbers(userId, startDate, endDate, params) {
 	};
 }
 
-export async function getRankings() {
-	let rankings = [];
-	const { startDate, endDate, params } = calcDays(30);
+export async function getStoredRankings() {
+	const { data: rankings, error } = await supabase
+		.from("embers")
+		.select("*")
+		.order("total_score", { ascending: false });
 
-	const { data: users, error: userErr } = await supabase
-		.from("platform_accounts")
-		.select("user_id");
-
-	if (userErr) {
-		console.error(userErr);
+	if (error) {
+		console.error(error);
 	}
-
-	let ids = [];
-
-	for (let index = 0; index < users.length; index++) {
-		const element = users[index];
-
-		ids.push(element.user_id);
-	}
-
-	const distinctIDs = new Set(ids);
-	const distinctIDsArr = Array.from(distinctIDs.keys());
-
-	for (let index = 0; index < distinctIDsArr.length; index++) {
-		const id = distinctIDsArr[index];
-
-		const embers = await calculateEmbers(id, startDate, endDate, params);
-
-		rankings.push(embers);
-	}
-
-    rankings.sort((a, b) => b.totalScore - a.totalScore)
 
 	return rankings;
 }
