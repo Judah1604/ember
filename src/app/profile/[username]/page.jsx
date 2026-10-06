@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import fetchLeetcodeActivity from "@/scripts/fetchFromLeetcode";
 import { ClimbingBoxLoader } from "react-spinners";
 import SideBar from "@/components/SideBar";
-import { calcDays, timeAgo } from "@/scripts/dateAndTime";
 import { useParams } from "next/navigation";
 import "@/app/styles/dashboard.css";
+import { timeAgo } from "@/scripts/dateAndTime";
 
 function page() {
 	const [isLoading, setIsLoading] = useState(true);
@@ -15,6 +14,7 @@ function page() {
 	const [activity, setActivity] = useState([]);
 	const [githubInfo, setGithubInfo] = useState({
 		activity: [],
+        username: '',
 		commitsNo: 0,
 		reposNo: 0,
 	});
@@ -26,6 +26,7 @@ function page() {
 	});
 	const [leetcodeInfo, setLeetcodeInfo] = useState({
 		activity: [],
+        username: '',
 		ranking: 0,
 		totalProblemsSolved: 0,
 		easyProblems: 0,
@@ -104,7 +105,7 @@ function page() {
 				.from("github_stats")
 				.select("*")
 				.eq("user_id", userId)
-				.single();
+				.maybeSingle();
 
 			if (gitError) {
 				console.error(gitError);
@@ -119,6 +120,7 @@ function page() {
 			} else {
 				setGithubInfo((prev) => ({
 					...prev,
+                    username: githubStats?.username ?? '',
 					commitsNo: githubStats?.commits ?? 0,
 					reposNo: githubStats?.reponos ?? 0,
 				}));
@@ -173,7 +175,7 @@ function page() {
 					.from("hackatime_stats")
 					.select("*")
 					.eq("user_id", userId)
-					.single();
+					.maybeSingle();
 
 				if (hackError) {
 					console.error(hackError);
@@ -227,7 +229,7 @@ function page() {
 					.from("leetcode_stats")
 					.select("*")
 					.eq("user_id", userId)
-					.single();
+					.maybeSingle();
 
 				if (leetError) {
 					console.error(leetError);
@@ -313,7 +315,7 @@ function page() {
 							) : (
 								<div className="panels">
 									<div className="col1">
-										<div className="panel general">
+                                    <div className="panel general user">
 											<div className="info">
 												<h1>
 													{hackatimeInfo.totalHours >
@@ -356,10 +358,15 @@ function page() {
 																			"PushEvent" &&
 																			activity.commit_count +
 																				" commits to"}{" "}
-																		{activity.subject.replace(
-																			`${githubInfo.username}/`,
-																			"",
-																		)}
+																		{activity.subject
+																			.replace(
+																				`${githubInfo.username}`,
+																				"",
+																			)
+																			.replace(
+																				`/`,
+																				"",
+																			)}
 																		—
 																		<span>
 																			{" "}

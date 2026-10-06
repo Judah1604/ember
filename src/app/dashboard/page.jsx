@@ -323,7 +323,6 @@ function page() {
 			const hours30Data = await hours30Res.json();
 			const hours60Data = await hours60Res.json();
 			const mostActiveProjectData = await mostActiveProjectRes.json();
-			console.log(mostActiveProjectData.projects[0]);
 
 			const mostActiveProject = mostActiveProjectData.projects.reduce(
 				(most, project) =>
@@ -644,7 +643,7 @@ function page() {
 																	activity.commit_count +
 																		" commits to"}{" "}
 																{activity.subject.replace(
-																	`${githubInfo.username}/`,
+																	`${githubInfo.username}`,
 																	"",
 																)}
 																—
