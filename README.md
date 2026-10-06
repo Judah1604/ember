@@ -27,12 +27,6 @@ Ember pulls real activity from GitHub, LeetCode, and Hackatime into one place, s
 
 **Scoring.** Each platform's activity resolves into a weighted composite score. Multi-platform queries use the platform's own weighting rather than a flat sum, so no single platform can quietly dominate the leaderboard.
 
-## What's left
-
-- Sign out
-- Disconnect a connected platform account (without losing historical activity)
-- Hover breakdown on the leaderboard, see the per-platform split behind any user's total score
-
 ## Why
 
 Built in a week to actually learn databases, sessions, and real third-party API integration, not by reading about them, by building something a real group of people would actually use and compete on.
