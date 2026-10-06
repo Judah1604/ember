@@ -70,6 +70,26 @@ function page() {
 		load();
 	}, [userId]);
 
+	useEffect(() => {
+		if (filteredRankings.length === 0) return;
+
+		let tooltips = [];
+
+		import("bootstrap/js/dist/tooltip").then(({ default: Tooltip }) => {
+			const elements = document.querySelectorAll(
+				'[data-bs-toggle="tooltip"]',
+			);
+
+			tooltips = [...elements].map((element) =>
+				Tooltip.getOrCreateInstance(element),
+			);
+		});
+
+		return () => {
+			tooltips.forEach((tooltip) => tooltip.dispose());
+		};
+	}, [filteredRankings]);
+
 	const handleChange = (event) => {
 		setSelectedPlatform(event.target.value);
 	};
@@ -183,7 +203,24 @@ function page() {
 										{item.username}
 									</a>
 
-									<div className="score">
+									<div
+										className="score"
+										data-bs-toggle="tooltip"
+										data-bs-placement="top"
+										data-bs-title={
+											selectedPlatform === "All"
+												? `Github: ${item.github_score} Hackatime: ${item.hackatime_score} Leetcode: ${item.leetcode_score}`
+												: selectedPlatform === "Github"
+													? `Github: ${item.github_score}`
+													: selectedPlatform ===
+														  "Hackatime"
+														? `Hackatime: ${item.hackatime_score}`
+														: selectedPlatform ===
+															  "Leetcode"
+															? `Leetcode: ${item.leetcode_score}`
+															: ""
+										}
+									>
 										<div className="content">
 											{getScore(item)}
 										</div>

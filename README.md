@@ -8,11 +8,13 @@ Ember pulls real activity from GitHub, LeetCode, and Hackatime into one place, s
 
 ## What it does
 
-- Connect your GitHub, LeetCode, and Hackatime accounts
+- Connect your GitHub, LeetCode, and Hackatime accounts, and disconnect them whenever, without losing your historical activity
 - Activity syncs in automatically and gets logged, deduplicated against what's already stored
 - Each platform's activity resolves into one unified score, "Embers"
+- Hover a score on the leaderboard to see the per-platform breakdown behind it
 - See where you rank, overall and per platform, across 1 day, 7 day, and 30 day windows
 - A public leaderboard, so the group can actually compete
+- Sign out, properly, session invalidated server-side, not just a cleared cookie
 
 ## How it's built
 
@@ -23,7 +25,7 @@ Ember pulls real activity from GitHub, LeetCode, and Hackatime into one place, s
 - **Hackatime** — OAuth, same integration pattern as GitHub, applied to a different API shape
 - **LeetCode** — no official public API, integrated against their internal GraphQL endpoint directly
 
-**Database: Postgres, via Supabase.** Schema designed and written by hand, `users`, `platform_accounts`, `sessions`, `activity_log` and more, each with real foreign key relationships, not auto-generated. Activity is stored raw (including zero-activity entries), with scoring and filtering handled at query time rather than baked into storage.
+**Database: Postgres, via Supabase.** Schema designed and written by hand, `users`, `platform_accounts`, `sessions`, `activity_log`, each with real foreign key relationships, not auto-generated. Activity is stored raw (including zero-activity entries), with scoring and filtering handled at query time rather than baked into storage.
 
 **Scoring.** Each platform's activity resolves into a weighted composite score. Multi-platform queries use the platform's own weighting rather than a flat sum, so no single platform can quietly dominate the leaderboard.
 

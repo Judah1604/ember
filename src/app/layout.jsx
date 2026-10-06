@@ -18,7 +18,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
 	return (
-		<html lang="en" className={`${darkerSans.variable} ${geistSans.variable}`}>
+		<html
+			lang="en"
+			className={`${darkerSans.variable} ${geistSans.variable}`}
+		>
 			<body>{children}</body>
 		</html>
 	);
