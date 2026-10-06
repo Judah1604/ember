@@ -174,9 +174,9 @@ function page() {
 							>
 								<div className="count">{index + 1}</div>
 								<div className="text">
-									<span className="name">
+									<a href={item.user_id === userId ? '/dashboard' : `/profile/${item.username}`} className="name">
 										{item.username}
-									</span>
+									</a>
 
 									<div className="score">
 										<div className="content">

@@ -65,129 +65,129 @@ function page() {
 		console.log("User ID:", userId);
 
 		async function updateGithubInfo() {
-			const { data: platformUserData, error } = await supabase
-				.from("platform_accounts")
+			const { data: platformUserData, error: platfromErr } =
+				await supabase
+					.from("platform_accounts")
+					.select("*")
+					.eq("user_id", userId)
+					.eq("platform", "github")
+					.maybeSingle();
+
+			const { data: githubStats, error: statsErr } = await supabase
+				.from("github_stats")
 				.select("*")
 				.eq("user_id", userId)
-				.eq("platform", "github")
 				.maybeSingle();
 
-			if (error) {
-				console.error(error);
+			if (statsErr) {
+				console.error(statsErr);
+			}
+			if (platfromErr) {
+				console.error(platfromErr);
 			}
 
 			if (!platformUserData) {
 				setGithubInfo((prev) => ({
 					...prev,
-					username: "",
-					commitsNo: 0,
-					reposNo: 0,
+					username: githubStats?.username ?? "",
+					commitsNo: githubStats?.commits ?? 0,
+					reposNo: githubStats?.reponos ?? 0,
 				}));
-			} else {
-				setGithubInfo((prev) => ({
-					...prev,
-					username: platformUserData.platform_username,
-				}));
-				const res = await fetch(
-					`https://api.github.com/users/${platformUserData.platform_username}/events`,
-					{
-						headers: {
-							Authorization: `Bearer ${platformUserData.access_token}`,
-							Accept: "application/vnd.github+json",
-						},
-					},
-				);
 
-				const userRes = await fetch(`https://api.github.com/user`, {
+				return;
+			}
+
+			const res = await fetch(
+				`https://api.github.com/users/${platformUserData.platform_username}/events`,
+				{
 					headers: {
 						Authorization: `Bearer ${platformUserData.access_token}`,
 						Accept: "application/vnd.github+json",
 					},
-				});
-				const userData = await userRes.json();
-				setGithubInfo((prev) => ({
-					...prev,
-					reposNo: userData.public_repos,
-				}));
+				},
+			);
 
-				const githubActivity = await res.json();
+			const userRes = await fetch(`https://api.github.com/user`, {
+				headers: {
+					Authorization: `Bearer ${platformUserData.access_token}`,
+					Accept: "application/vnd.github+json",
+				},
+			});
+			const userData = await userRes.json();
 
-				const filtered = githubActivity.filter(
-					(activity) =>
-						activity.type === "PushEvent" ||
-						activity.type === "CreateEvent",
-				);
-				const logs = [];
+			const githubActivity = await res.json();
 
-				for (let index = 0; index < filtered.length; index++) {
-					const element = filtered[index];
+			const filtered = githubActivity.filter(
+				(activity) =>
+					activity.type === "PushEvent" ||
+					activity.type === "CreateEvent",
+			);
+			const logs = [];
 
-					if (element.type === "PushEvent") {
-						const before = element.payload.before,
-							head = element.payload.head;
+			for (let index = 0; index < filtered.length; index++) {
+				const element = filtered[index];
 
-						const response = await fetch(
-							`https://api.github.com/repos/${element.repo.name}/compare/${before}...${head}`,
-							{
-								headers: {
-									Authorization: `Bearer ${platformUserData.access_token}`,
-									Accept: "application/vnd.github+json",
-								},
+				if (element.type === "PushEvent") {
+					const before = element.payload.before,
+						head = element.payload.head;
+
+					const response = await fetch(
+						`https://api.github.com/repos/${element.repo.name}/compare/${before}...${head}`,
+						{
+							headers: {
+								Authorization: `Bearer ${platformUserData.access_token}`,
+								Accept: "application/vnd.github+json",
 							},
-						);
+						},
+					);
 
-						const info = await response.json(),
-							commitCount = info.total_commits;
+					const info = await response.json(),
+						commitCount = info.total_commits;
 
-						logs.push({
-							action: element.type,
-							user_id: userId,
-							subject: element.repo.name,
-							commit_count: commitCount,
-							platform: "Github",
-							date: element.created_at,
-						});
-					} else {
-						logs.push({
-							action: element.type,
-							user_id: userId,
-							subject: element.repo.name,
-							platform: "Github",
-							date: element.created_at,
-						});
-					}
+					logs.push({
+						action: element.type,
+						user_id: userId,
+						subject: element.repo.name,
+						commit_count: commitCount,
+						platform: "Github",
+						date: element.created_at,
+					});
+				} else {
+					logs.push({
+						action: element.type,
+						user_id: userId,
+						subject: element.repo.name,
+						platform: "Github",
+						date: element.created_at,
+					});
+				}
+			}
+
+			let commitCount = 0;
+
+			const map = {};
+
+			for (const item of logs) {
+				const date = item.date.slice(0, 10);
+
+				const key = `${item.user_id}-${item.platform}-${item.action}-${item.subject}-${date}`;
+
+				if (map[key]) {
+					map[key].commit_count =
+						(map[key].commit_count ?? 0) + (item.commit_count ?? 0);
+				} else {
+					map[key] = {
+						...item,
+						date,
+					};
 				}
 
-				let commitCount = 0;
+				commitCount += item.commit_count ?? 0;
+			}
 
-				const map = {};
+			const uniqueLogs = Object.values(map);
 
-				for (const item of logs) {
-					const date = item.date.slice(0, 10);
-
-					const key = `${item.user_id}-${item.platform}-${item.action}-${item.subject}-${date}`;
-
-					if (map[key]) {
-						map[key].commit_count =
-							(map[key].commit_count ?? 0) +
-							(item.commit_count ?? 0);
-					} else {
-						map[key] = {
-							...item,
-							date,
-						};
-					}
-
-					commitCount += item.commit_count ?? 0;
-				}
-
-
-				const uniqueLogs = Object.values(map);
-				setGithubInfo((prev) => ({ ...prev, commitsNo: commitCount }));
-
-				if (uniqueLogs.length === 0) return;
-                console.log(uniqueLogs)
-
+			if (uniqueLogs.length > 0) {
 				const { error } = await supabase
 					.from("activity_log")
 					.upsert(uniqueLogs, {
@@ -198,6 +198,32 @@ function page() {
 					console.error(error);
 					return;
 				}
+			}
+
+			setGithubInfo((prev) => ({
+				...prev,
+				username: platformUserData.platform_username,
+				commitsNo: commitCount,
+				reposNo: userData.public_repos,
+			}));
+
+			const { error: newErr } = await supabase
+				.from("github_stats")
+				.upsert(
+					{
+						user_id: userId,
+						username: platformUserData.platform_username,
+						commits: commitCount,
+						reponos: userData.public_repos,
+					},
+					{
+						onConflict: "user_id",
+					},
+				)
+				.select();
+
+			if (newErr) {
+				console.error(newErr);
 			}
 		}
 		async function updateGithubActivity() {
@@ -226,84 +252,116 @@ function page() {
 				.eq("platform", "hackatime")
 				.maybeSingle();
 
+			const { data: hackStats, error: statsErr } = await supabase
+				.from("hackatime_stats")
+				.select("*")
+				.eq("user_id", userId)
+				.maybeSingle();
+
 			if (error) {
 				console.error(error);
+			}
+
+			if (statsErr) {
+				console.error(statsErr);
 			}
 
 			if (!platformUserData) {
 				setHackatimeInfo((prev) => ({
 					...prev,
-					username: "",
-					hours: 0,
-					totalHours: 0,
-					streak: 0,
-					mostActiveProject: "",
+					username: hackStats?.username ?? "",
+					hours: hackStats?.hours30 ?? 0,
+					totalHours: hackStats?.hours60 ?? 0,
+					streak: hackStats?.streak ?? 0,
+					mostActiveProject: hackStats?.most_active_project ?? "",
 				}));
-			} else {
-				const accessToken = platformUserData.access_token;
-				const { params: params30 } = calcDays(30);
-				const { params: params60 } = calcDays(60);
 
-				const streakRes = await fetch(
-					"https://hackatime.hackclub.com/api/v1/authenticated/streak",
+				return;
+			}
+
+			const accessToken = platformUserData.access_token;
+			const { params: params30 } = calcDays(30);
+			const { params: params60 } = calcDays(60);
+
+			const streakRes = await fetch(
+				"https://hackatime.hackclub.com/api/v1/authenticated/streak",
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+						Accept: "application/vnd.github+json",
+					},
+				},
+			);
+
+			const hours30Res = await fetch(
+				`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params30}`,
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				},
+			);
+			const hours60Res = await fetch(
+				`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params60}`,
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				},
+			);
+
+			const mostActiveProjectRes = await fetch(
+				"https://hackatime.hackclub.com/api/v1/authenticated/projects",
+				{
+					headers: {
+						Authorization: `Bearer ${accessToken}`,
+					},
+				},
+			);
+
+			const streakData = await streakRes.json();
+			const hours30Data = await hours30Res.json();
+			const hours60Data = await hours60Res.json();
+			const mostActiveProjectData = await mostActiveProjectRes.json();
+            console.log(mostActiveProjectData.projects[0])
+
+			const mostActiveProject = mostActiveProjectData.projects.reduce(
+				(most, project) =>
+					project.total_seconds > most.total_seconds ? project : most,
+				mostActiveProjectData.projects[0],
+			);
+
+			setHackatimeInfo((prev) => ({
+				...prev,
+				username: platformUserData.platform_username,
+				streak: streakData.streak_days ?? 0,
+				hours: hours30Data.total_seconds ?? 0,
+				totalHours: hours60Data.total_seconds ?? 0,
+				mostActiveProject: mostActiveProject?.name ?? "",
+			}));
+
+			const { error: newErr } = await supabase
+				.from("hackatime_stats")
+				.upsert(
 					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-							Accept: "application/vnd.github+json",
-						},
+						user_id: userId,
+						username: platformUserData.platform_username,
+						streak: streakData.streak_days,
+						hours30: hours30Data.total_seconds,
+						hours60: hours60Data.total_seconds,
+						most_active_project: mostActiveProject?.name ?? "",
+					},
+					{
+						onConflict: "user_id",
 					},
 				);
 
-				const hours30Res = await fetch(
-					`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params30}`,
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-						},
-					},
-				);
-				const hours60Res = await fetch(
-					`https://hackatime.hackclub.com/api/v1/authenticated/hours?${params60}`,
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-						},
-					},
-				);
-
-				const mostActiveProjectRes = await fetch(
-					"https://hackatime.hackclub.com/api/v1/authenticated/projects",
-					{
-						headers: {
-							Authorization: `Bearer ${accessToken}`,
-						},
-					},
-				);
-
-				const streakData = await streakRes.json();
-				const hours30Data = await hours30Res.json();
-				const hours60Data = await hours60Res.json();
-				const mostActiveProjectData = await mostActiveProjectRes.json();
-
-				const mostActiveProject = mostActiveProjectData.projects.reduce(
-					(most, project) =>
-						project.total_seconds > most.total_seconds
-							? project
-							: most,
-				);
-
-				setHackatimeInfo((prev) => ({
-					...prev,
-					username: platformUserData.platform_username,
-					streak: streakData.streak_days ?? 0,
-					hours: hours30Data.total_seconds ?? 0,
-					totalHours: hours60Data.total_seconds ?? 0,
-					mostActiveProject: mostActiveProject?.name ?? "",
-				}));
+			if (newErr) {
+				console.error(newErr);
 			}
 		}
 		async function updateLeetcodeInfo() {
-            if (!userId) return;
+			if (!userId) return;
 			const { data: platformUserData, error } = await supabase
 				.from("leetcode_stats")
 				.select("*")
@@ -317,7 +375,7 @@ function page() {
 			if (!platformUserData) {
 				setLeetcodeInfo((prev) => ({
 					...prev,
-					activity: [], 
+					activity: [],
 					username: "",
 					ranking: 0,
 					totalProblemsSolved: 0,

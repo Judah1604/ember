@@ -87,7 +87,7 @@ export default async function connectLeetcodeAction(formData) {
 			console.error(insertError);
 		}
 	}
-    const { data: newPlatformUserData, error: newErr } = await supabase
+    const { error: newErr } = await supabase
 		.from("leetcode_stats")
 		.upsert({
 			user_id: userId,

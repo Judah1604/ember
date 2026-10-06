@@ -92,6 +92,10 @@
 
                 .name {
                     font-weight: 500;
+
+                    &:hover {
+                        text-decoration: underline;
+                    }
                 }
 
 				.score {

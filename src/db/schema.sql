@@ -39,6 +39,22 @@ CREATE TABLE leetcode_stats (
   mediumProblems TEXT NOT NULL,
   hardProblems TEXT NOT NULL
 );
+CREATE TABLE github_stats (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  username TEXT NOT NULL,
+    commits TEXT NOT NULL,
+    repoNos TEXT NOT NULL
+);
+CREATE TABLE hackatime_stats (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  username TEXT NOT NULL,
+    hours60 TEXT NOT NULL,
+    hours30 TEXT NOT NULL,
+    streak TEXT NOT NULL,
+    most_active_project TEXT NOT NULL
+);
 
 CREATE TABLE embers (
   id SERIAL PRIMARY KEY,
