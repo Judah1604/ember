@@ -27,7 +27,7 @@ Ember pulls real activity from GitHub, LeetCode, and Hackatime into one place, s
 
 **Database: Postgres, via Supabase.** Schema designed and written by hand, `users`, `platform_accounts`, `sessions`, `activity_log`, each with real foreign key relationships, not auto-generated. Activity is stored raw (including zero-activity entries), with scoring and filtering handled at query time rather than baked into storage.
 
-**Scoring.** Each platform's activity resolves into a weighted composite score. Multi-platform queries use the platform's own weighting rather than a flat sum, so no single platform can quietly dominate the leaderboard.
+**Scoring.** Each platform's activity resolves into Embers, GitHub by commit count, LeetCode by problem difficulty, Hackatime by coding hours, and a user's total is the sum across whichever platforms they've connected. Full breakdown in the docs page.
 
 ## Why
 

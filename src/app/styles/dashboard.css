@@ -39,6 +39,34 @@
 		padding: 30px;
 		padding-left: 0;
 
+		&.docs {
+			h2 {
+				font-weight: 600;
+			}
+
+			h3 {
+				font-weight: 600;
+			}
+
+			p {
+				font-weight: 200;
+				letter-spacing: 0.1px;
+			}
+
+			ul {
+				margin-top: 10px;
+			}
+
+			table {
+				margin: 10px 0;
+
+				tr {
+					display: flex;
+					gap: 12px;
+				}
+			}
+		}
+
 		p {
 			margin: 0;
 		}
