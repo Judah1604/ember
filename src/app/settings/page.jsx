@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import SideBar from "../dashboard/SideBar";
+import SideBar from "../../components/SideBar";
 import "@/app/styles/dashboard.css";
 import "../styles/sidepages.css";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
@@ -50,7 +50,10 @@ function page() {
 
 				<div className="section mt-4">
 					<p>Sign out of your Ember account</p>
-					<button className="btn btn-primary" onClick={() => handleSignOut(userId)}>
+					<button
+						className="btn btn-primary"
+						onClick={() => handleSignOut(userId)}
+					>
 						Sign out
 					</button>
 				</div>
@@ -72,7 +75,12 @@ function page() {
 										/>
 										<span>{platform}</span>
 									</div>
-									<button className="btn btn-primary" onClick={() => disconnectPlatform(userId, platform)}>
+									<button
+										className="btn btn-primary"
+										onClick={() =>
+											disconnectPlatform(userId, platform)
+										}
+									>
 										Disconnect
 									</button>
 								</div>

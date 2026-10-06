@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import SideBar from "../dashboard/SideBar";
+import SideBar from "@/components/SideBar";
 import "@/app/styles/dashboard.css";
-import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
 import "./leaderboards.css";
 import { getStoredRankings } from "../scripts/rankingEmbers";
@@ -21,7 +20,6 @@ function page() {
 		async function getUser() {
 			const user = await getCurrentUser();
 			setUserId(user);
-
 		}
 
 		getUser();
@@ -174,7 +172,14 @@ function page() {
 							>
 								<div className="count">{index + 1}</div>
 								<div className="text">
-									<a href={item.user_id === userId ? '/dashboard' : `/profile/${item.username}`} className="name">
+									<a
+										href={
+											item.user_id === userId
+												? "/dashboard"
+												: `${`/profile/${item.username.toLowerCase()}`}`
+										}
+										className="name"
+									>
 										{item.username}
 									</a>
 

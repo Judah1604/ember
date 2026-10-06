@@ -4,9 +4,9 @@ import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/scripts/getCurrentUser";
 import fetchLeetcodeActivity from "@/scripts/fetchFromLeetcode";
 import { ClimbingBoxLoader } from "react-spinners";
-import SideBar from "./SideBar";
+import SideBar from "@/components/SideBar";
 import { calcDays, timeAgo } from "@/scripts/dateAndTime";
-import "./dashboard.css";
+import "@/app/styles/dashboard.css";
 
 function page() {
 	const [isLoading, setIsLoading] = useState(true);
@@ -323,7 +323,7 @@ function page() {
 			const hours30Data = await hours30Res.json();
 			const hours60Data = await hours60Res.json();
 			const mostActiveProjectData = await mostActiveProjectRes.json();
-            console.log(mostActiveProjectData.projects[0])
+			console.log(mostActiveProjectData.projects[0]);
 
 			const mostActiveProject = mostActiveProjectData.projects.reduce(
 				(most, project) =>
@@ -692,13 +692,6 @@ function page() {
 												/>
 												{githubInfo.reposNo}{" "}
 												repositories
-											</div>
-											<div className="item">
-												<img
-													src="/icons/streak.svg"
-													alt="streak count"
-												/>
-												Current streak: 9 days
 											</div>
 										</div>
 									</div>
