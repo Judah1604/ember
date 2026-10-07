@@ -64,7 +64,7 @@ export async function getRankings() {
 
 	const embers1 = onedayRankings.map((ranking) => ({
 		user_id: ranking.userId,
-        username: ranking.username,
+		username: ranking.username,
 		period: "1d",
 		github_score: ranking.github,
 		leetcode_score: ranking.leetcode,

@@ -1,7 +1,9 @@
 import { getRankings } from "@/app/scripts/getRankings";
+import { refreshStats } from "@/app/scripts/refreshStats";
 
 export async function GET() {
 	try {
+		await refreshStats();
 		await getRankings();
 
 		return Response.json({
