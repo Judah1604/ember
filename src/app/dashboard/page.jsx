@@ -222,13 +222,6 @@ function page() {
 				)
 				.select();
 
-			setGithubInfo((prev) => ({
-				...prev,
-				username: githubStats?.username ?? "",
-				commitsNo: githubStats?.commits ?? 0,
-				reposNo: githubStats?.reponos ?? 0,
-			}));
-
 			if (newErr) {
 				console.error(newErr);
 			}
