@@ -1,6 +1,7 @@
 import { Darker_Grotesque, Geist } from "next/font/google";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
+import "@/app/styles/media-queries.css";
 
 const darkerSans = Darker_Grotesque({
 	variable: "--font-darker-sans",

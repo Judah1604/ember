@@ -8,30 +8,37 @@
 		font-weight: 300;
 	}
 
+	.nav-links,
+	.mobile-links {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+
+		a {
+			opacity: 0.3;
+			transition: 0.2s ease;
+
+			&.active,
+			&:hover {
+				opacity: 1;
+			}
+		}
+	}
+
+	.mobile-links,
+	.hamb {
+		display: none;
+	}
+
 	.sidebar {
 		padding: 30px;
 		background-color: #101010;
 		border-right: 1px solid #1e1e1e;
+        height: 100%;
 
 		.logo {
 			height: 55px;
 			margin-bottom: 30px;
-		}
-
-		.nav-links {
-			display: flex;
-			flex-direction: column;
-			gap: 20px;
-
-			a {
-				opacity: 0.3;
-				transition: 0.2s ease;
-
-				&.active,
-				&:hover {
-					opacity: 1;
-				}
-			}
 		}
 	}
 
